@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Debugger Record Comparison - Test</title>
+    
+    <!-- Load external dependencies with local fallback -->
+    <script>
+        let dependenciesLoaded = false;
+        
+        // Function to load jsondiffpatch with multiple fallbacks
+        function loadJsonDiffPatch() {
+            console.log('Loading jsondiffpatch...');
+            
+            // First try local fallback (always available)
+            const localScript = document.createElement('script');
+            localScript.src = 'lib/jsondiffpatch-fallback.js';
+            localScript.onload = function() {
+                console.log('✅ Local fallback jsondiffpatch loaded');
+                // Now try to load the real library to override if possible
+                tryLoadRealLibrary();
+            };
+            localScript.onerror = function() {
+                console.log('⚠️ Local fallback not found, trying CDN...');
+                tryLoadRealLibrary();
+            };
+            document.head.appendChild(localScript);
+        }
+        
+        function tryLoadRealLibrary() {
+            // Try primary CDN
+            const script1 = document.createElement('script');
+            script1.src = 'https://unpkg.com/jsondiffpatch@0.4.1/dist/jsondiffpatch.umd.min.js';
+            script1.onload = function() {
+                console.log('✅ jsondiffpatch loaded from primary CDN (upgraded)');
+                loadRecordComparisonFiles();
+            };
+            script1.onerror = function() {
+                console.log('⚠️ Primary CDN failed, trying jsdelivr...');
+                // Try fallback CDN
+                const script2 = document.createElement('script');
+                script2.src = 'https://cdn.jsdelivr.net/npm/jsondiffpatch@0.4.1/dist/jsondiffpatch.umd.min.js';
+                script2.onload = function() {
+                    console.log('✅ jsondiffpatch loaded from jsDelivr CDN (upgraded)');
+                    loadRecordComparisonFiles();
+                };
+                script2.onerror = function() {
+                    console.log('⚠️ All CDNs failed, using local fallback');
+                    // Ensure fallback is available
+                    if (typeof jsondiffpatch === 'undefined') {
+                        createBasicMock();
+                    }
+                    loadRecordComparisonFiles();
+                };
+                document.head.appendChild(script2);
+            };
+            document.head.appendChild(script1);
+        }
+        
+        // Create a very basic mock if everything else fails
+        function createBasicMock() {
+            window.jsondiffpatch = {
+                create: function() {
+                    return {
+                        diff: function(left, right) {
+                            return JSON.stringify(left) !== JSON.stringify(right) ? { _: [left, right] } : undefined;
+                        }
+                    };
+                },
+                formatters: {
+                    html: {
+                        format: function(diff) {
+                            if (!diff) return '<div>No changes</div>';
+                            return '<div style="padding:10px;background:#fff3cd;border:1px solid #ffc107;">Changes detected (basic mode)</div>';
+                        }
+                    }
+                }
+            };
+            console.log('✅ Basic mock jsondiffpatch created');
+        }
+        
+        // Load CSS and JS files after jsondiffpatch is ready
+        function loadRecordComparisonFiles() {
+            if (dependenciesLoaded) return; // Prevent multiple loads
+            dependenciesLoaded = true;
+            
+            // Load your CSS first
+            const localCSS = document.createElement('link');
+            localCSS.rel = 'stylesheet';
+            localCSS.href = 'src/css/RecordComparison.css';
+            localCSS.onload = function() {
+                console.log('✅ RecordComparison.css loaded');
+            };
+            localCSS.onerror = function() {
+                console.log('⚠️ RecordComparison.css not found');
+            };
+            document.head.appendChild(localCSS);
+            
+            // Try to load jsondiffpatch CSS (optional)
+            const css = document.createElement('link');
+            css.rel = 'stylesheet';
+            css.href = 'https://unpkg.com/jsondiffpatch@0.4.1/dist/formatters-styles/html.css';
+            css.onerror = function() {
+                console.log('⚠️ jsondiffpatch CSS not loaded (this is optional)');
+            };
+            document.head.appendChild(css);
+            
+            // Load your JS file
+            const script = document.createElement('script');
+            script.src = 'src/js/RecordComparison.js';
+            script.onload = function() {
+                console.log('✅ RecordComparison.js loaded');
+                // Initialize after everything is loaded
+                setTimeout(initializeTestEnvironment, 500);
+            };
+            script.onerror = function() {
+                console.error('❌ Failed to load RecordComparison.js');
+            };
+            document.body.appendChild(script);
+        }
+        
+        // Start loading when DOM is ready
+        document.addEventListener('DOMContentLoaded', loadJsonDiffPatch);
+    </script>
+    
+    <style>
+        /* Additional test page styles */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .test-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            min-width: 200px;
+        }
+        
+        .test-controls h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .test-btn {
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+            padding: 8px 12px;
+            background: #007acc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .test-btn:hover {
+            background: #005a99;
+        }
+        
+        .test-btn.secondary {
+            background: #6c757d;
+        }
+        
+        .test-btn.secondary:hover {
+            background: #545b62;
+        }
+        
+        .data-info {
+            font-size: 11px;
+            color: #666;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+        
+        #testStatus {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+            display: none;
+            z-index: 1001;
+        }
+    </style>
+</head>
+<body>
+    <!-- Test Controls Panel -->
+    <div class="test-controls">
+        <h4>🧪 Test Controls</h4>
+        <button class="test-btn" onclick="testCustomerRecord()">Test Customer Record</button>
+        <button class="test-btn" onclick="testSalesOrderRecord()">Test Sales Order</button>
+        <button class="test-btn" onclick="testItemRecord()">Test Item Record</button>
+        <button class="test-btn" onclick="testComplexRecord()">Test Complex Data</button>
+        <button class="test-btn secondary" onclick="testNoChanges()">Test No Changes</button>
+        <button class="test-btn secondary" onclick="switchToTableView()">Switch to Table View</button>
+        <button class="test-btn secondary" onclick="clearTest()">Clear Data</button>
+        
+        <div class="data-info">
+            <strong>Current Test:</strong><br>
+            <span id="currentTest">None loaded</span>
+        </div>
+    </div>
+    
+    <!-- Status Messages -->
+    <div id="testStatus"></div>
+    
+    <script>
+        // Mock Microsoft.Dynamics.NAV.InvokeExtensibilityMethod for testing
+        if (typeof Microsoft === 'undefined') {
+            window.Microsoft = {
+                Dynamics: {
+                    NAV: {
+                        InvokeExtensibilityMethod: function(eventName, data) {
+                            console.log('🔔 AL Event Triggered:', eventName, data);
+                            showStatus(`Event: ${eventName} - Check console for details`);
+                        }
+                    }
+                }
+            };
+        }
+        
+        // Initialize the comparison tool
+        let testComparison;
+        
+        function initializeTestEnvironment() {
+            // Wait a bit more for everything to be ready
+            setTimeout(() => {
+                if (typeof Initialize === 'function') {
+                    // Initialize with test configuration
+                    const config = {
+                        title: 'Data Debugger - Test Environment',
+                        theme: 'modern',
+                        enableDrillDown: true
+                    };
+                    
+                    try {
+                        Initialize(JSON.stringify(config));
+                        testComparison = window.recordComparison;
+                        showStatus('Test environment initialized successfully!');
+                        console.log('🎉 Test environment ready! Available functions:', {
+                            Initialize: typeof Initialize,
+                            LoadComparison: typeof LoadComparison,
+                            ClearData: typeof ClearData,
+                            jsondiffpatch: typeof jsondiffpatch,
+                            recordComparison: typeof window.recordComparison
+                        });
+                    } catch (error) {
+                        console.error('Failed to initialize:', error);
+                        showStatus('Initialization failed - check console');
+                    }
+                } else {
+                    console.error('Initialize function not available');
+                    showStatus('Initialize function not found - RecordComparison.js may not have loaded');
+                }
+            }, 1000);
+        }
+        
+        // Fallback initialization if the dynamic loading doesn't work
+        window.onload = function() {
+            // Only initialize if not already done by the dynamic loader
+            setTimeout(() => {
+                if (!testComparison && typeof Initialize === 'function') {
+                    initializeTestEnvironment();
+                }
+            }, 2000);
+        };
+        
+        // Test Data Sets
+        function testCustomerRecord() {
+            console.log('Testing customer record...');
+            console.log('LoadComparison available:', typeof LoadComparison);
+            
+            const oldData = {
+                "No.": "CUST001",
+                "Name": "John Smith Industries",
+                "Address": "123 Main Street",
+                "City": "New York",
+                "Country/Region Code": "US",
+                "Phone No.": "555-0123",
+                "E-Mail": "john@smithindustries.com",
+                "Credit Limit (LCY)": "50000.00",
+                "Payment Terms Code": "30 DAYS",
+                "Salesperson Code": "JS",
+                "Customer Posting Group": "DOMESTIC",
+                "Gen. Bus. Posting Group": "DOMESTIC",
+                "VAT Bus. Posting Group": "DOMESTIC",
+                "Last Date Modified": "2024-01-15T10:30:00Z",
+                "Blocked": false
+            };
+            
+            const newData = {
+                "No.": "CUST001",
+                "Name": "John Smith Industries LLC",  // Changed
+                "Address": "456 Business Avenue",      // Changed
+                "City": "New York",
+                "Country/Region Code": "US",
+                "Phone No.": "555-0199",              // Changed
+                "E-Mail": "contact@smithindustries.com", // Changed
+                "Credit Limit (LCY)": "75000.00",     // Changed
+                "Payment Terms Code": "15 DAYS",      // Changed
+                "Salesperson Code": "JS",
+                "Customer Posting Group": "DOMESTIC",
+                "Gen. Bus. Posting Group": "DOMESTIC",
+                "VAT Bus. Posting Group": "DOMESTIC",
+                "Last Date Modified": "2024-03-20T14:45:00Z", // Changed
+                "Blocked": false,
+                "Website": "www.smithindustries.com"  // Added
+            };
+            
+            const metadata = createCustomerMetadata();
+            
+            try {
+                console.log('Calling LoadComparison with data...');
+                LoadComparison(JSON.stringify(oldData), JSON.stringify(newData), JSON.stringify(metadata));
+                document.getElementById('currentTest').innerHTML = 'Customer Record<br><small>7 fields changed, 1 added</small>';
+                showStatus('Customer record test loaded successfully!');
+                console.log('✅ Customer test loaded successfully');
+                
+                // Switch to table view to show all fields including unchanged ones
+                setTimeout(() => {
+                    const viewSelector = document.getElementById('viewModeSelector');
+                    if (viewSelector) {
+                        viewSelector.value = 'table';
+                        viewSelector.dispatchEvent(new Event('change'));
+                        console.log('Switched to table view');
+                    }
+                }, 100);
+            } catch (error) {
+                console.error('❌ Failed to load customer test:', error);
+                showStatus('Failed to load customer test - check console');
+            }
+        }
+        
+        function testSalesOrderRecord() {
+            const oldData = {
+                "No.": "SO-001234",
+                "Sell-to Customer No.": "CUST001",
+                "Sell-to Customer Name": "John Smith Industries",
+                "Order Date": "2024-03-01T00:00:00Z",
+                "Due Date": "2024-03-31T00:00:00Z",
+                "Shipping Date": "2024-03-15T00:00:00Z",
+                "Amount": "15750.00",
+                "Amount Including VAT": "18900.00",
+                "Status": "Open",
+                "Priority": "Normal",
+                "Salesperson Code": "JS",
+                "Payment Terms Code": "30 DAYS",
+                "Shipment Method Code": "PICKUP",
+                "Location Code": "MAIN"
+            };
+            
+            const newData = {
+                "No.": "SO-001234",
+                "Sell-to Customer No.": "CUST001",
+                "Sell-to Customer Name": "John Smith Industries", // Changed
+                "Order Date": "2024-03-01T00:00:00Z",
+                "Due Date": "2024-04-15T00:00:00Z",    // Changed
+                "Shipping Date": "2024-03-20T00:00:00Z", // Changed
+                "Amount": "18900.50",                   // Changed
+                "Amount Including VAT": "22680.60",     // Changed
+                "Status": "Released",                   // Changed
+                "Priority": "High",                     // Changed
+                "Salesperson Code": "MB",               // Changed
+                "Payment Terms Code": "15 DAYS",       // Changed
+                "Shipment Method Code": "DELIVERY",     // Changed
+                "Location Code": "MAIN",
+                "External Document No.": "PO-2024-456", // Added
+                "Requested Delivery Date": "2024-03-18T00:00:00Z" // Added
+            };
+            
+            const metadata = createSalesOrderMetadata();
+            
+            LoadComparison(JSON.stringify(oldData), JSON.stringify(newData), JSON.stringify(metadata));
+            document.getElementById('currentTest').innerHTML = 'Sales Order<br><small>9 fields changed, 2 added</small>';
+            showStatus('Sales order test loaded successfully!');
+        }
+        
+        function testItemRecord() {
+            const oldData = {
+                "No.": "ITEM001",
+                "Description": "Professional Laptop Computer",
+                "Type": "Inventory",
+                "Base Unit of Measure": "PCS",
+                "Unit Price": "1299.99",
+                "Unit Cost": "899.50",
+                "Inventory": "25.00",
+                "Reserved Qty.": "5.00",
+                "Item Category Code": "COMPUTERS",
+                "Product Group Code": "LAPTOPS",
+                "Vendor No.": "VENDOR001",
+                "Last Date Modified": "2024-02-10T09:15:00Z",
+                "Blocked": false,
+                "Critical": false
+            };
+            
+            const newData = {
+                "No.": "ITEM001",
+                "Description": "Professional Gaming Laptop Computer", // Changed
+                "Type": "Inventory",
+                "Base Unit of Measure": "PCS",
+                "Unit Price": "1599.99",            // Changed
+                "Unit Cost": "1099.75",             // Changed
+                "Inventory": "18.00",               // Changed
+                "Reserved Qty.": "8.00",            // Changed
+                "Item Category Code": "COMPUTERS",
+                "Product Group Code": "GAMING",     // Changed
+                "Vendor No.": "VENDOR002",          // Changed
+                "Last Date Modified": "2024-03-25T16:30:00Z", // Changed
+                "Blocked": false,
+                "Critical": true,                   // Changed
+                "Weight": "2.5",                    // Added
+                "Warranty Period": "24 MONTHS"     // Added
+            };
+            
+            const metadata = createItemMetadata();
+            
+            LoadComparison(JSON.stringify(oldData), JSON.stringify(newData), JSON.stringify(metadata));
+            document.getElementById('currentTest').innerHTML = 'Item Record<br><small>8 fields changed, 2 added</small>';
+            showStatus('Item record test loaded successfully!');
+        }
+        
+        function testComplexRecord() {
+            const oldData = {
+                "DocumentNo": "INV-2024-001",
+                "CustomerData": {
+                    "CustomerNo": "C001",
+                    "Name": "ABC Corporation",
+                    "ContactPerson": "Jane Doe"
+                },
+                "LineItems": [
+                    { "ItemNo": "ITEM001", "Quantity": 5, "UnitPrice": 100.00 },
+                    { "ItemNo": "ITEM002", "Quantity": 2, "UnitPrice": 250.00 }
+                ],
+                "TotalAmount": 1000.00,
+                "VATAmount": 200.00,
+                "Status": "Draft",
+                "CreatedDate": "2024-03-01T10:00:00Z",
+                "ModifiedDate": "2024-03-01T10:00:00Z",
+                "Tags": ["urgent", "new-customer"],
+                "CustomFields": {
+                    "ProjectCode": "PROJ001",
+                    "Department": "Sales",
+                    "Manager": "John Smith"
+                }
+            };
+            
+            const newData = {
+                "DocumentNo": "INV-2024-001",
+                "CustomerData": {
+                    "CustomerNo": "C001",
+                    "Name": "ABC Corporation Ltd",     // Changed
+                    "ContactPerson": "Jane Doe",
+                    "Email": "jane@abc-corp.com"       // Added
+                },
+                "LineItems": [
+                    { "ItemNo": "ITEM001", "Quantity": 8, "UnitPrice": 95.00 }, // Changed
+                    { "ItemNo": "ITEM002", "Quantity": 2, "UnitPrice": 250.00 },
+                    { "ItemNo": "ITEM003", "Quantity": 1, "UnitPrice": 150.00 }  // Added
+                ],
+                "TotalAmount": 1410.00,               // Changed
+                "VATAmount": 282.00,                  // Changed
+                "Status": "Approved",                 // Changed
+                "CreatedDate": "2024-03-01T10:00:00Z",
+                "ModifiedDate": "2024-03-25T15:30:00Z", // Changed
+                "Tags": ["urgent", "approved"],       // Changed
+                "CustomFields": {
+                    "ProjectCode": "PROJ002",          // Changed
+                    "Department": "Sales",
+                    "Manager": "Sarah Johnson",        // Changed
+                    "Priority": "High"                 // Added
+                },
+                "ApprovedBy": "Manager001"             // Added
+            };
+            
+            const metadata = createComplexMetadata();
+            
+            LoadComparison(JSON.stringify(oldData), JSON.stringify(newData), JSON.stringify(metadata));
+            document.getElementById('currentTest').innerHTML = 'Complex Record<br><small>Multiple nested changes</small>';
+            showStatus('Complex record test loaded successfully!');
+        }
+        
+        function testNoChanges() {
+            const sameData = {
+                "No.": "TEST001",
+                "Description": "Test Item - No Changes",
+                "Unit Price": "99.99",
+                "Status": "Active",
+                "Last Modified": "2024-03-20T12:00:00Z"
+            };
+            
+            const metadata = {
+                tableName: "Test Table",
+                tableId: 99999,
+                primaryKey: "No.=TEST001",
+                changeType: "Modify",
+                fields: {
+                    "No.": { caption: "No.", type: "Code", length: 20 },
+                    "Description": { caption: "Description", type: "Text", length: 100 },
+                    "Unit Price": { caption: "Unit Price", type: "Decimal" },
+                    "Status": { caption: "Status", type: "Option" },
+                    "Last Modified": { caption: "Last Modified", type: "DateTime" }
+                }
+            };
+            
+            LoadComparison(JSON.stringify(sameData), JSON.stringify(sameData), JSON.stringify(metadata));
+            document.getElementById('currentTest').innerHTML = 'No Changes Test<br><small>Identical records</small>';
+            showStatus('No changes test loaded - records are identical');
+        }
+        
+        function clearTest() {
+            ClearData();
+            document.getElementById('currentTest').innerHTML = 'None loaded';
+            showStatus('Test data cleared');
+        }
+        
+        function switchToTableView() {
+            const viewSelector = document.getElementById('viewModeSelector');
+            const changeFilter = document.getElementById('changeTypeFilter');
+            
+            if (viewSelector) {
+                viewSelector.value = 'table';
+                viewSelector.dispatchEvent(new Event('change'));
+                showStatus('Switched to table view');
+            }
+            
+            if (changeFilter) {
+                changeFilter.value = 'all';
+                changeFilter.dispatchEvent(new Event('change'));
+                showStatus('Showing all fields (including unchanged)');
+            }
+            
+            // Add a tip about the clickable stats
+            setTimeout(() => {
+                showStatus('💡 Try clicking on the stat numbers to filter records!');
+            }, 2000);
+        }
+        
+        // Metadata creators
+        function createCustomerMetadata() {
+            return {
+                tableName: "Customer",
+                tableId: 18,
+                primaryKey: "No.=CUST001",
+                changeType: "Modify",
+                fields: {
+                    "No.": { caption: "No.", type: "Code", length: 20 },
+                    "Name": { caption: "Name", type: "Text", length: 100 },
+                    "Address": { caption: "Address", type: "Text", length: 100 },
+                    "City": { caption: "City", type: "Text", length: 30 },
+                    "Country/Region Code": { caption: "Country/Region Code", type: "Code", length: 10 },
+                    "Phone No.": { caption: "Phone No.", type: "Text", length: 30 },
+                    "E-Mail": { caption: "E-Mail", type: "Text", length: 80 },
+                    "Credit Limit (LCY)": { caption: "Credit Limit (LCY)", type: "Decimal" },
+                    "Payment Terms Code": { caption: "Payment Terms Code", type: "Code", length: 10 },
+                    "Salesperson Code": { caption: "Salesperson Code", type: "Code", length: 20 },
+                    "Customer Posting Group": { caption: "Customer Posting Group", type: "Code", length: 20 },
+                    "Gen. Bus. Posting Group": { caption: "Gen. Bus. Posting Group", type: "Code", length: 20 },
+                    "VAT Bus. Posting Group": { caption: "VAT Bus. Posting Group", type: "Code", length: 20 },
+                    "Last Date Modified": { caption: "Last Date Modified", type: "DateTime" },
+                    "Blocked": { caption: "Blocked", type: "Boolean" },
+                    "Website": { caption: "Website", type: "Text", length: 80 }
+                }
+            };
+        }
+        
+        function createSalesOrderMetadata() {
+            return {
+                tableName: "Sales Header",
+                tableId: 36,
+                primaryKey: "Document Type=Order,No.=SO-001234",
+                changeType: "Modify",
+                fields: {
+                    "No.": { caption: "No.", type: "Code", length: 20 },
+                    "Sell-to Customer No.": { caption: "Sell-to Customer No.", type: "Code", length: 20 },
+                    "Sell-to Customer Name": { caption: "Sell-to Customer Name", type: "Text", length: 100 },
+                    "Order Date": { caption: "Order Date", type: "Date" },
+                    "Due Date": { caption: "Due Date", type: "Date" },
+                    "Shipping Date": { caption: "Shipping Date", type: "Date" },
+                    "Amount": { caption: "Amount", type: "Decimal" },
+                    "Amount Including VAT": { caption: "Amount Including VAT", type: "Decimal" },
+                    "Status": { caption: "Status", type: "Option" },
+                    "Priority": { caption: "Priority", type: "Option" },
+                    "Salesperson Code": { caption: "Salesperson Code", type: "Code", length: 20 },
+                    "Payment Terms Code": { caption: "Payment Terms Code", type: "Code", length: 10 },
+                    "Shipment Method Code": { caption: "Shipment Method Code", type: "Code", length: 10 },
+                    "Location Code": { caption: "Location Code", type: "Code", length: 10 },
+                    "External Document No.": { caption: "External Document No.", type: "Code", length: 35 },
+                    "Requested Delivery Date": { caption: "Requested Delivery Date", type: "Date" }
+                }
+            };
+        }
+        
+        function createItemMetadata() {
+            return {
+                tableName: "Item",
+                tableId: 27,
+                primaryKey: "No.=ITEM001",
+                changeType: "Modify",
+                fields: {
+                    "No.": { caption: "No.", type: "Code", length: 20 },
+                    "Description": { caption: "Description", type: "Text", length: 100 },
+                    "Type": { caption: "Type", type: "Option" },
+                    "Base Unit of Measure": { caption: "Base Unit of Measure", type: "Code", length: 10 },
+                    "Unit Price": { caption: "Unit Price", type: "Decimal" },
+                    "Unit Cost": { caption: "Unit Cost", type: "Decimal" },
+                    "Inventory": { caption: "Inventory", type: "Decimal" },
+                    "Reserved Qty.": { caption: "Reserved Qty.", type: "Decimal" },
+                    "Item Category Code": { caption: "Item Category Code", type: "Code", length: 20 },
+                    "Product Group Code": { caption: "Product Group Code", type: "Code", length: 20 },
+                    "Vendor No.": { caption: "Vendor No.", type: "Code", length: 20 },
+                    "Last Date Modified": { caption: "Last Date Modified", type: "DateTime" },
+                    "Blocked": { caption: "Blocked", type: "Boolean" },
+                    "Critical": { caption: "Critical", type: "Boolean" },
+                    "Weight": { caption: "Weight", type: "Decimal" },
+                    "Warranty Period": { caption: "Warranty Period", type: "Text", length: 20 }
+                }
+            };
+        }
+        
+        function createComplexMetadata() {
+            return {
+                tableName: "Invoice Document",
+                tableId: 50001,
+                primaryKey: "DocumentNo=INV-2024-001",
+                changeType: "Modify",
+                fields: {
+                    "DocumentNo": { caption: "Document No.", type: "Code", length: 20 },
+                    "CustomerData": { caption: "Customer Data", type: "Text" },
+                    "LineItems": { caption: "Line Items", type: "Text" },
+                    "TotalAmount": { caption: "Total Amount", type: "Decimal" },
+                    "VATAmount": { caption: "VAT Amount", type: "Decimal" },
+                    "Status": { caption: "Status", type: "Option" },
+                    "CreatedDate": { caption: "Created Date", type: "DateTime" },
+                    "ModifiedDate": { caption: "Modified Date", type: "DateTime" },
+                    "Tags": { caption: "Tags", type: "Text" },
+                    "CustomFields": { caption: "Custom Fields", type: "Text" },
+                    "ApprovedBy": { caption: "Approved By", type: "Code", length: 20 }
+                }
+            };
+        }
+        
+        function showStatus(message) {
+            const status = document.getElementById('testStatus');
+            status.textContent = message;
+            status.style.display = 'block';
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Console helper for debugging
+        console.log('🧪 Test Environment Ready!');
+        console.log('Available test functions:');
+        console.log('- testCustomerRecord()');
+        console.log('- testSalesOrderRecord()');
+        console.log('- testItemRecord()');
+        console.log('- testComplexRecord()');
+        console.log('- testNoChanges()');
+        console.log('- clearTest()');
+    </script>
+</body>
+</html>
