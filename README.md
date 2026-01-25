@@ -77,7 +77,7 @@ echo "# My New Project" > README.md
 # Commit and push
 git add .
 git commit -m "Add new project: my-new-project"
-git push origin main
+git push
 ```
 
 ### Example 2: Experimenting with Code
