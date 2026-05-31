@@ -44,15 +44,10 @@ codeunit 50003 "Data Debugger Context Manager"
     procedure CaptureCallStack(var ChangeBuffer: Record "Data Debugger Change Buffer")
     var
         CallStackText: Text;
-        TriggerSource: Text;
     begin
-        // Build call stack information
-        CallStackText := BuildCallStackInfo();
+        CallStackText := SessionInformation.Callstack();
         ChangeBuffer.SetCallStack(CallStackText);
-
-        // Extract trigger source (simplified)
-        TriggerSource := ExtractTriggerSource(CallStackText);
-        ChangeBuffer."Trigger Source" := CopyStr(TriggerSource, 1, MaxStrLen(ChangeBuffer."Trigger Source"));
+        ChangeBuffer."Trigger Source" := CopyStr(ExtractTriggerSource(CallStackText), 1, MaxStrLen(ChangeBuffer."Trigger Source"));
     end;
 
     procedure StartNewTransaction()
@@ -78,49 +73,21 @@ codeunit 50003 "Data Debugger Context Manager"
         exit(TransactionChangeCount);
     end;
 
-    local procedure BuildCallStackInfo(): Text
-    var
-        CallStackBuilder: TextBuilder;
-        StackLevel: Integer;
-        ObjectInfo: Text;
-    begin
-        CallStackBuilder.AppendLine('=== CALL STACK ===');
-        CallStackBuilder.AppendLine('Timestamp: ' + Format(CurrentDateTime()));
-        CallStackBuilder.AppendLine('Session: ' + Format(SessionId()));
-        CallStackBuilder.AppendLine('User: ' + UserId());
-        CallStackBuilder.AppendLine('Company: ' + CompanyName());
-        CallStackBuilder.AppendLine('');
-
-        // Add execution context information
-        CallStackBuilder.AppendLine('=== EXECUTION CONTEXT ===');
-        CallStackBuilder.AppendLine('Current Codeunit: Database Triggers');
-        CallStackBuilder.AppendLine('Trigger Type: Global Database Event');
-        CallStackBuilder.AppendLine('Transaction ID: ' + Format(CurrentTransactionId));
-        CallStackBuilder.AppendLine('Change #: ' + Format(TransactionChangeCount + 1));
-        CallStackBuilder.AppendLine('');
-
-        // Add environment information
-        CallStackBuilder.AppendLine('=== ENVIRONMENT ===');
-        CallStackBuilder.AppendLine('Client Type: ' + GetClientType());
-        CallStackBuilder.AppendLine('Application Version: ' + ApplicationVersion());
-        CallStackBuilder.AppendLine('Platform Version: ' + PlatformVersion());
-
-        exit(CallStackBuilder.ToText());
-    end;
-
     local procedure ExtractTriggerSource(CallStackText: Text): Text
     begin
-        // Simplified trigger source extraction
-        // In a real implementation, you might parse the call stack more thoroughly
-        if StrPos(CallStackText, 'Global Database Event') > 0 then
-            exit('Global Database Trigger')
-        else
-            exit('Unknown Source');
+        if (StrPos(CallStackText, 'OnDatabaseInsert') > 0) or (StrPos(CallStackText, 'OnGlobalInsert') > 0) then
+            exit('Database Insert');
+        if (StrPos(CallStackText, 'OnDatabaseModify') > 0) or (StrPos(CallStackText, 'OnGlobalModify') > 0) then
+            exit('Database Modify');
+        if (StrPos(CallStackText, 'OnDatabaseDelete') > 0) or (StrPos(CallStackText, 'OnGlobalDelete') > 0) then
+            exit('Database Delete');
+        if (StrPos(CallStackText, 'OnDatabaseRename') > 0) or (StrPos(CallStackText, 'OnGlobalRename') > 0) then
+            exit('Database Rename');
+        exit('Unknown Source');
     end;
 
     local procedure GetClientType(): Text
     begin
-        // Determine client type based on session information
         case true of
             (SessionId() = 0):
                 exit('Server');
@@ -129,17 +96,5 @@ codeunit 50003 "Data Debugger Context Manager"
             else
                 exit('Unknown');
         end;
-    end;
-
-    local procedure ApplicationVersion(): Text
-    begin
-        // Return a placeholder version - in real implementation you might use Environment Information
-        exit('BC 26.0');
-    end;
-
-    local procedure PlatformVersion(): Text
-    begin
-        // Return a placeholder version - in real implementation you might use Environment Information
-        exit('Platform 26.0');
     end;
 }

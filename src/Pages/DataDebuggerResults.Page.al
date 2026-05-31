@@ -3,7 +3,7 @@ page 50001 "Data Debugger Results"
     Caption = 'Data Debugger Results';
     PageType = List;
     SourceTable = "Data Debugger Change Buffer";
-    Editable = false;
+    Editable = true;
     SourceTableTemporary = true;
     ApplicationArea = All;
 
@@ -158,12 +158,14 @@ page 50001 "Data Debugger Results"
                     ToolTip = 'What triggered this change';
                 }
 
-                field(ViewComparison; 'Click to View')
+                field(ViewComparison; ViewComparisonText)
                 {
                     ApplicationArea = All;
                     Caption = 'Record Comparison';
                     ToolTip = 'Click to open visual record comparison';
+                    Editable = false;
                     Style = StandardAccent;
+                    StyleExpr = true;
 
                     trigger OnDrillDown()
                     begin
@@ -307,6 +309,12 @@ page 50001 "Data Debugger Results"
         OriginalBuffer: Record "Data Debugger Change Buffer" temporary;
         OriginalTotal: Integer;
         HasActiveFilters: Boolean;
+        ViewComparisonText: Text[30];
+
+    trigger OnAfterGetRecord()
+    begin
+        ViewComparisonText := 'Click to View';
+    end;
 
     procedure SetData(var TempBuffer: Record "Data Debugger Change Buffer" temporary; RunId: Guid; StartTime: DateTime)
     begin
