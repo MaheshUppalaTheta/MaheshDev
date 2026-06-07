@@ -9,17 +9,11 @@ table 50001 "Data Debugger Setup"
         {
             Caption = 'Primary Key';
         }
-        field(10; "Enable Table Filtering"; Boolean)
+        field(12; "Table Capture Scope"; Enum "DD Capture Scope")
         {
-            Caption = 'Enable Table Filtering';
-        }
-        field(11; "Table Filter Mode"; Enum "DD Table Filter Mode")
-        {
-            Caption = 'Table Filter Mode';
-        }
-        field(20; "Enable Field Filtering"; Boolean)
-        {
-            Caption = 'Enable Field Filtering';
+            Caption = 'Table Capture Scope';
+            InitValue = "All Tables";
+            ToolTip = 'All Tables: capture every table. Only Selected Tables: capture only the tables listed in Table Filters (whitelist). All Except Selected Tables: capture everything except the tables listed in Table Filters (blacklist).';
         }
         field(30; "Enable Change Threshold"; Boolean)
         {
@@ -64,9 +58,7 @@ table 50001 "Data Debugger Setup"
         if not Setup.Get('') then begin
             Setup.Init();
             Setup."Primary Key" := '';
-            Setup."Enable Table Filtering" := false;
-            Setup."Table Filter Mode" := Setup."Table Filter Mode"::"Exclude Only";
-            Setup."Enable Field Filtering" := false;
+            Setup."Table Capture Scope" := Setup."Table Capture Scope"::"All Tables";
             Setup."Enable Change Threshold" := false;
             Setup."Min Field Changes Required" := 1;
             Setup."Max Records Per Session" := 10000;

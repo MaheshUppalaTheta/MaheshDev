@@ -10,41 +10,33 @@ codeunit 50002 "Data Debugger Filter Manager"
         LastSecond: Integer;
 
     procedure IsTableAllowed(TableId: Integer): Boolean
-    var
-        TableFilter: Record "Data Debugger Table Filter";
     begin
         LoadSetup();
 
-        // First check basic system table exclusions (always apply)
+        // System/self tables are always excluded.
         if IsSystemTableExcluded(TableId) then
             exit(false);
 
-        // If table filtering is not enabled, allow all non-system tables
-        if not Setup."Enable Table Filtering" then
-            exit(true);
-
-        // Check if this specific table has a filter entry
-        TableFilter.SetRange("Table ID", TableId);
-        TableFilter.SetRange(Enabled, true);
-        if TableFilter.FindFirst() then begin
-            // Table is in filter list - check against mode
-            case Setup."Table Filter Mode" of
-                Setup."Table Filter Mode"::"Include Only":
-                    exit(TableFilter."Filter Type" = TableFilter."Filter Type"::Include);
-                Setup."Table Filter Mode"::"Exclude Only":
-                    exit(TableFilter."Filter Type" <> TableFilter."Filter Type"::Exclude);
-            end;
-        end else begin
-            // Table not in filter list - apply mode default
-            case Setup."Table Filter Mode" of
-                Setup."Table Filter Mode"::"Include Only":
-                    exit(false); // Not in include list, reject
-                Setup."Table Filter Mode"::"Exclude Only":
-                    exit(true); // Not in exclude list, allow
-            end;
+        // A single Capture Scope decides how the Table Filters list is interpreted.
+        case Setup."Table Capture Scope" of
+            Setup."Table Capture Scope"::"All Tables":
+                exit(true);
+            Setup."Table Capture Scope"::"Only Selected Tables":
+                exit(IsTableInList(TableId)); // whitelist: only listed tables
+            Setup."Table Capture Scope"::"All Except Selected Tables":
+                exit(not IsTableInList(TableId)); // blacklist: everything except listed tables
         end;
 
         exit(true);
+    end;
+
+    local procedure IsTableInList(TableId: Integer): Boolean
+    var
+        TableFilter: Record "Data Debugger Table Filter";
+    begin
+        TableFilter.SetRange("Table ID", TableId);
+        TableFilter.SetRange(Enabled, true);
+        exit(not TableFilter.IsEmpty());
     end;
 
     procedure ShouldCaptureModification(RecRef: RecordRef; xRecRef: RecordRef): Boolean
@@ -78,55 +70,31 @@ codeunit 50002 "Data Debugger Filter Manager"
 
     procedure FilterFields(var JsonObj: JsonObject; TableId: Integer)
     var
-        TableFilter: Record "Data Debugger Table Filter";
-        FieldList: List of [Text];
-        FieldName: Text;
+        FieldSel: Record "DD Field Selection Buffer";
+        SelectedNames: List of [Text];
         Keys: List of [Text];
         KeyText: Text;
         TempJsonObj: JsonObject;
         JsonToken: JsonToken;
     begin
-        LoadSetup();
+        // Field filtering applies per table: only for tables that have selected fields.
+        // When fields are selected, we capture ONLY those fields for that table.
+        FieldSel.SetRange("Table ID", TableId);
+        FieldSel.SetRange(Selected, true);
+        if FieldSel.IsEmpty() then
+            exit; // No field selection - capture all fields
 
-        // If field filtering is not enabled, return original object
-        if not Setup."Enable Field Filtering" then
-            exit;
+        FieldSel.FindSet();
+        repeat
+            SelectedNames.Add(FieldSel."Field Name".ToLower());
+        until FieldSel.Next() = 0;
 
-        // Get field filters for this table
-        TableFilter.SetRange("Table ID", TableId);
-        TableFilter.SetRange(Enabled, true);
-        TableFilter.SetFilter("Field Filters", '<>%1', '');
-        if not TableFilter.FindFirst() then
-            exit; // No field filters defined
-
-        // Parse field filter list
-        FieldList := TableFilter."Field Filters".Split(',');
-
-        // Filter the JSON object
         Clear(TempJsonObj);
         Keys := JsonObj.Keys();
-
         foreach KeyText in Keys do begin
             JsonObj.Get(KeyText, JsonToken);
-
-            case TableFilter."Filter Type" of
-                TableFilter."Filter Type"::Include:
-                    begin
-                        // Include only specified fields
-                        foreach FieldName in FieldList do begin
-                            if KeyText.ToLower() = DelChr(FieldName.ToLower(), '<>', ' ') then begin
-                                TempJsonObj.Add(KeyText, JsonToken);
-                                break;
-                            end;
-                        end;
-                    end;
-                TableFilter."Filter Type"::Exclude:
-                    begin
-                        // Exclude specified fields
-                        if not IsFieldInList(KeyText, FieldList) then
-                            TempJsonObj.Add(KeyText, JsonToken);
-                    end;
-            end;
+            if SelectedNames.Contains(KeyText.ToLower()) then
+                TempJsonObj.Add(KeyText, JsonToken);
         end;
 
         JsonObj := TempJsonObj;
@@ -159,6 +127,13 @@ codeunit 50002 "Data Debugger Filter Manager"
         CaptureCount += 1;
         LastCaptureTime := CurrentTime;
         exit(true);
+    end;
+
+    procedure ReloadSetup()
+    begin
+        // Forces the next LoadSetup() to re-read the Setup record.
+        // Called when a recording starts so setup changes take effect without restarting the client.
+        IsSetupLoaded := false;
     end;
 
     local procedure LoadSetup()
@@ -203,17 +178,6 @@ codeunit 50002 "Data Debugger Filter Manager"
                 exit(true);
         end;
 
-        exit(false);
-    end;
-
-    local procedure IsFieldInList(FieldName: Text; FieldList: List of [Text]): Boolean
-    var
-        Field: Text;
-    begin
-        foreach Field in FieldList do begin
-            if FieldName.ToLower() = DelChr(Field.ToLower(), '<>', ' ') then
-                exit(true);
-        end;
         exit(false);
     end;
 

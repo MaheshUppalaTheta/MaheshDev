@@ -72,7 +72,6 @@ codeunit 50001 "Data Debugger Event Handlers"
             exit;
         if not FilterManager.CanCaptureNow() then
             exit;
-
         CaptureDelete(RecRef);
     end;
 

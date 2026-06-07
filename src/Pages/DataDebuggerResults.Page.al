@@ -49,11 +49,31 @@ page 50001 "Data Debugger Results"
                 field(TableFilterField; TableFilter)
                 {
                     Caption = 'Table Filter';
-                    ToolTip = 'Filter by table name (use * for wildcards)';
+                    ToolTip = 'Filter by table. Use the drill-down to pick from the tables present in these results, or type a name (use * for wildcards).';
 
                     trigger OnValidate()
                     begin
+                        // Typing a name overrides a table picked via the drill-down.
+                        SelectedTableId := 0;
                         ApplyFilters();
+                    end;
+
+                    trigger OnDrillDown()
+                    var
+                        TablePick: Page "DD Table Pick";
+                        PickedId: Integer;
+                        PickedName: Text;
+                    begin
+                        TablePick.LoadTables(OriginalBuffer);
+                        TablePick.LookupMode(true);
+                        if TablePick.RunModal() = Action::LookupOK then begin
+                            TablePick.GetSelected(PickedId, PickedName);
+                            if PickedId <> 0 then begin
+                                SelectedTableId := PickedId;
+                                TableFilter := CopyStr(PickedName, 1, MaxStrLen(TableFilter));
+                                ApplyFilters();
+                            end;
+                        end;
                     end;
                 }
 
@@ -302,6 +322,7 @@ page 50001 "Data Debugger Results"
         SessionStartTime: DateTime;
         TotalChanges: Integer;
         TableFilter: Text[50];
+        SelectedTableId: Integer;
         ChangeTypeFilter: Option " ",Insert,Modify,Delete,Rename;
         UserFilter: Text[50];
         SearchText: Text[100];
@@ -327,10 +348,13 @@ page 50001 "Data Debugger Results"
         OriginalBuffer.Reset();
         OriginalBuffer.DeleteAll();
 
-        // Copy data to both display and original buffers
+        // Copy data to both display and original buffers.
+        // CalcFields loads the BLOBs into memory so they are carried by the record assignment
+        // (required now that the source is a persisted table, not a temporary one).
         TempBuffer.Reset();
         if TempBuffer.FindSet() then
             repeat
+                TempBuffer.CalcFields("Old Data", "New Data", "Call Stack");
                 Rec := TempBuffer;
                 Rec.Insert();
                 OriginalBuffer := TempBuffer;
@@ -343,6 +367,7 @@ page 50001 "Data Debugger Results"
 
         // Clear filters
         TableFilter := '';
+        SelectedTableId := 0;
         ChangeTypeFilter := ChangeTypeFilter::" ";
         UserFilter := '';
         SearchText := '';
@@ -368,7 +393,7 @@ page 50001 "Data Debugger Results"
         end;
 
         TotalChanges := Rec.Count();
-        HasActiveFilters := (TableFilter <> '') or (ChangeTypeFilter <> ChangeTypeFilter::" ") or (UserFilter <> '') or (SearchText <> '') or (TableTypeFilter <> TableTypeFilter::" ");
+        HasActiveFilters := (TableFilter <> '') or (SelectedTableId <> 0) or (ChangeTypeFilter <> ChangeTypeFilter::" ") or (UserFilter <> '') or (SearchText <> '') or (TableTypeFilter <> TableTypeFilter::" ");
         if Rec.FindFirst() then;
         CurrPage.Update(false);
     end;
@@ -377,8 +402,11 @@ page 50001 "Data Debugger Results"
     var
         ChangeTypeEnum: Enum "Data Debugger Change Type";
     begin
-        // Table filter
-        if TableFilter <> '' then
+        // Table filter: exact table when picked via drill-down, otherwise text contains
+        if SelectedTableId <> 0 then begin
+            if ChangeBuffer."Table ID" <> SelectedTableId then
+                exit(false);
+        end else if TableFilter <> '' then
             if not (ChangeBuffer."Table Name".ToUpper().Contains(TableFilter.ToUpper().Replace('*', ''))) then
                 exit(false);
 
@@ -431,6 +459,7 @@ page 50001 "Data Debugger Results"
     local procedure ClearAllFilters()
     begin
         TableFilter := '';
+        SelectedTableId := 0;
         ChangeTypeFilter := ChangeTypeFilter::" ";
         UserFilter := '';
         SearchText := '';

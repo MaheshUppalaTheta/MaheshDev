@@ -20,15 +20,6 @@ table 50002 "Data Debugger Table Filter"
             Caption = 'Table Name';
             Editable = false;
         }
-        field(20; "Filter Type"; Enum "Data Debugger Filter Type")
-        {
-            Caption = 'Filter Type';
-        }
-        field(30; "Field Filters"; Text[2000])
-        {
-            Caption = 'Field Filters';
-            ToolTip = 'Comma-separated list of field names to include/exclude';
-        }
         field(40; Enabled; Boolean)
         {
             Caption = 'Enabled';
@@ -55,6 +46,22 @@ table 50002 "Data Debugger Table Filter"
     trigger OnModify()
     begin
         UpdateTableName();
+    end;
+
+    trigger OnDelete()
+    var
+        FieldSel: Record "DD Field Selection Buffer";
+        OtherFilter: Record "Data Debugger Table Filter";
+    begin
+        // Remove this table's stored field selections, unless another filter row
+        // still references the same Table ID.
+        OtherFilter.SetRange("Table ID", "Table ID");
+        OtherFilter.SetFilter("Entry No.", '<>%1', "Entry No.");
+        if not OtherFilter.IsEmpty() then
+            exit;
+
+        FieldSel.SetRange("Table ID", "Table ID");
+        FieldSel.DeleteAll();
     end;
 
     local procedure UpdateTableName()

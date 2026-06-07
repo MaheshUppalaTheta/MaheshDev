@@ -45,18 +45,19 @@
 - **Filter Manager:** Lazily loads setup, excludes known system and self tables by default, and enforces change-threshold counts (`Min Field Changes Required`) before logging modifications.
 - **Throttling:** Optional per-second capture cap prevents system overload; counters reset each second.
 - **Session Limits:** `Max Records Per Session` offers guardrails for long recordings.
-- **Storage:** Change and analysis buffers are temporary tables; payload BLOBs store JSON/call-stack text via streams to minimize database writes.
+- **Storage:** The Change Buffer is a persisted database table — captured data survives the session and a crash, and is cleared only at the start of the next recording (the Analysis Buffer remains temporary/in-memory). Payload BLOBs store JSON/call-stack text via streams.
 
 ## Setup Configuration Steps
 1. **Access Setup:** Open Data Debugger (page 50000) → click **Setup** → opens Setup Card (page 50004).
-2. **Table Filtering:**
-   - Enable → choose mode: **Include Only** (whitelist) or **Exclude Only** (blacklist).
+2. **Table Filtering (Capture Scope):**
+   - Set **Table Capture Scope** on the Setup card: **All Tables** (default), **Only Selected Tables** (whitelist), or **All Except Selected Tables** (blacklist).
    - Click **Table Filters** action → opens Table Filters List (page 50005).
-   - Add entries with Table ID, Filter Type (Include/Exclude), optional Field Filters (comma-separated), and Enabled flag.
-   - Use **Add Common System Tables** action to pre-populate exclusions (Change Log, Activity Log, etc.).
-3. **Field Filtering:**
-   - Enable → requires per-table field list in Table Filter records.
-   - Field Filters field accepts comma-separated field names; matching is case-insensitive with trimming.
+   - Add the tables that define the whitelist/blacklist: Table ID + Enabled. (The optional **Select Fields** action refines *which fields* are captured for a table — it does not affect whether the table itself is captured.)
+   - Use **Add Common System Tables** action to pre-populate the list with noisy system tables (useful with **All Except Selected Tables**).
+3. **Field Filtering (optional, per table):**
+   - No global toggle — it applies automatically to any Table Filter row that has fields selected.
+   - On the Table Filters page, use the **Select Fields** action to tick the fields to capture for the current row (checkbox list via `DD Field Selection`, page 50111, backed by the **persisted** table `DD Field Selection Buffer`, 50005, keyed by Table ID + Field No.). Edits save immediately and are retained across sessions; deleting a Table Filter row cascades to delete its stored field selections (unless another row still references the same Table ID).
+   - Semantics are simple: if any fields are selected, **only** those fields are captured for that table; if none are selected, all fields are captured. Field selection only has effect for tables that are actually captured (i.e. not for tables in an "All Except Selected Tables" exclusion list). Matching is case-insensitive with trimming.
 4. **Change Threshold:**
    - Enable → set Min Field Changes Required (default 1, range 1+).
    - ⚠️ **Known Issue:** Currently broken due to uninitialized `xRecRef` in event handler—disable until patched.
@@ -109,7 +110,7 @@
 ### Performance or Memory Pressure
 - **Symptoms:** UI lag, slow page refresh, high memory usage during recording.
 - **Solutions:**
-  1. Narrow table filters (use Include Only mode with specific tables).
+  1. Narrow the Capture Scope (use **Only Selected Tables** with a short list).
   2. Enable performance throttling (max captures per second).
   3. Run multiple shorter sessions instead of one long session.
   4. Use advanced analysis to detect bursts or heavy temp-table usage patterns.
@@ -149,8 +150,7 @@
 | Enum | Object ID | Values | Purpose |
 | --- | --- | --- | --- |
 | `Data Debugger Change Type` | 50000 | Insert, Modify, Delete, Rename | Classifies database operation type. |
-| `DD Table Filter Mode` | 50001 | Include Only, Exclude Only | Determines setup page table filter behavior. |
-| `Data Debugger Filter Type` | 50002 | Include, Exclude | Per-table filter action in `Table Filter` records. |
+| `DD Capture Scope` | 50005 | All Tables, Only Selected Tables, All Except Selected Tables | Single Setup control deciding how the Table Filters list is interpreted (capture all / whitelist / blacklist). |
 | `Data Debugger Analysis Type` | 50003 | Impact Analysis, Performance Metric, Pattern Detection, Relationship Mapping | Categorizes analysis buffer entries. |
 | `Data Debugger Severity` | 50004 | Info, Warning, Critical | Severity classification for analysis findings. |
 
@@ -164,14 +164,14 @@
 
 **Data Debugger Setup (50001)**
 - **Singleton:** Primary Key = '' (empty string)
-- **Table Filtering:** Enable Table Filtering (Boolean), Table Filter Mode (enum)
-- **Field Filtering:** Enable Field Filtering (Boolean)
+- **Table Filtering:** Table Capture Scope (enum `DD Capture Scope`: All Tables / Only Selected Tables / All Except Selected Tables; defaults to All Tables)
+- **Field Filtering:** no setup field — configured per row on Table Filters via the **Select Fields** action; applies whenever a row has fields selected (captures only those fields)
 - **Change Threshold:** Enable Change Threshold (Boolean), Min Field Changes Required (Integer, default 1)
 - **Performance:** Max Records Per Session (Integer, default 10000), Enable Performance Throttling (Boolean), Max Captures Per Second (Integer, default 100)
 - **Helper Method:** `GetSetup()` creates and returns singleton record with defaults
 
 **Data Debugger Table Filter (50002)**
-- **Fields:** Entry No., Table ID (with lookup to AllObjWithCaption), Table Name (auto-populated), Filter Type (enum), Field Filters (Text[2000] comma-separated), Enabled (Boolean)
+- **Fields:** Entry No., Table ID (lookup to AllObjWithCaption), Table Name (auto-populated), Enabled (Boolean). Table membership is defined by a row's presence + Enabled; the Setup **Capture Scope** decides whether the list is a whitelist or blacklist. Per-field capture selections live in the separate persisted table `DD Field Selection Buffer` (50005), and are cascade-deleted via this table's OnDelete trigger.
 - **Trigger Behavior:** OnInsert/OnModify automatically updates Table Name from metadata
 
 **Data Debugger Live Stats (50003)**
@@ -188,7 +188,7 @@
 | Page | Object ID | Type | Key Actions | Navigation Target |
 | --- | --- | --- | --- | --- |
 | Data Debugger | 50000 | Card | Start Recording, Stop Recording, Setup, Live Analysis, Refresh Stats | Main entry point; launches Setup (50004), Live Stats (50009) |
-| Data Debugger Results | 50001 | List | View Field Changes, View Call Stack, Group by Table, Group by Transaction, Export to Excel/JSON, Advanced Analysis, Clear Filters, Record Comparison | Opens Field Changes (50002), Context Details (50006), Table Summary (50003), Transactions (50007), Advanced Analysis (50008), Record Comparison (50011). The captured Call Stack now contains the real AL stack via `SessionInformation.Callstack()`. |
+| Data Debugger Results | 50001 | List | View Field Changes, View Call Stack, Group by Table, Group by Transaction, Export to Excel/JSON, Advanced Analysis, Clear Filters, Record Comparison | Opens Field Changes (50002), Context Details (50006), Table Summary (50003), Transactions (50007), Advanced Analysis (50008), Record Comparison (50011). The **Table Filter** field has a drill-down (`DD Table Pick`, 50112, backed by `DD Table Pick Buffer`, 50006) listing the tables present in the results with operation counts; picking one filters the grid to that table by Table ID. The captured Call Stack contains the real AL stack via `SessionInformation.Callstack()`. |
 | Data Debugger Field Changes | 50002 | List | Show Only Changed Fields, Export to Excel, Copy to Clipboard | Parses Old/New JSON, displays field-by-field diff in Name/Value Buffer |
 | Data Debugger Table Summary | 50003 | List | View Table Changes | Aggregates changes by table, drills back to Results filtered by table |
 | Data Debugger Setup | 50004 | Card | Table Filters | Opens Table Filters (50005); edits Setup singleton |
@@ -201,6 +201,20 @@
 | DD Field Comparison Details | 50012 | Card | (View only) | Drill-down from Record Comparison; shows single-field diff with old/new values, lengths, change type |
 | DD Record Comparison Selection | 50013 | List | Select Record, View Details, Compare Record | Selection dialog for Record Comparison page |
 
+## API Surface (External / MCP Integration)
+These OData v4 API objects expose the persisted capture data for external consumption (e.g. an MCP server that lets Claude analyse a recorded session). All are read-only and share publisher/group/version `theta/dataDebugger/v1.0`.
+
+| Object | ID | Entity Set | Purpose |
+| --- | --- | --- | --- |
+| `DD Change Entry API` (Page) | 50100 | `changeEntries` | One row per captured change. Surfaces all context fields plus the `oldData`, `newData`, and `callStack` BLOBs decoded to text. Supports OData `$filter` (e.g. by `runId`, `tableId`, `changeType`). |
+| `DD Recording Run API` (Query) | 50101 | `recordingRuns` | Summary grouped by `runId` with `changeCount`, `firstChange`, `lastChange` — lets a client discover sessions before drilling into entries. |
+
+**Typical MCP flow:** list `recordingRuns` → pick a `runId` → query `changeEntries?$filter=runId eq {guid}` → read the typed context + old/new JSON + call stack per change.
+
+**Base URL pattern:** `/api/theta/dataDebugger/v1.0/companies({id})/changeEntries`
+
+> Note: `changeEntries` reads the Change Buffer, which is cleared at the start of each new recording. Pull data after stopping (or during) a session, before the next run begins.
+
 ## Key Implementation Patterns
 ### Event Subscriber Architecture
 - **EventSubscriberInstance = Manual**: Requires explicit `BindSubscription(DDEventHandler)` / `UnbindSubscription(DDEventHandler)` calls in Start/Stop Recording actions.
@@ -209,7 +223,7 @@
 
 ### JSON Serialization Strategy
 - **RecordToJson()**: Iterates FieldRef, skips system fields/flowfields/BLOBs, formats by FieldType, applies field filtering before writing.
-- **Field Filtering**: `FilterManager.FilterFields()` mutates JsonObject per table filter rules before storage.
+- **Field Filtering**: `FilterManager.FilterFields()` reads the selected fields for the table from `DD Field Selection Buffer` (50005) and, if any are selected, keeps only those keys in the JsonObject before storage.
 - **Parsing**: Field Changes page uses `JsonObject.ReadFrom()` / `Get()` to reconstruct Name/Value pairs.
 
 ### Transaction Auto-Reset Logic
@@ -264,7 +278,7 @@
 
 ### Scenario 2: Exclude Custom Tables from Capture
 1. Open Data Debugger Setup → click Table Filters.
-2. Add row: Table ID = your table, Filter Type = Exclude, Enabled = Yes.
+2. Set **Table Capture Scope = All Except Selected Tables**, then add a row: Table ID = your table, Enabled = Yes.
 3. Alternatively, update `IsSystemTableExcluded()` in Filter Manager to hard-code exclusions.
 
 ### Scenario 3: Create Custom Results View

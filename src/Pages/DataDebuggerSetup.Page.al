@@ -14,28 +14,10 @@ page 50004 "Data Debugger Setup"
             {
                 Caption = 'Table Filtering';
 
-                field("Enable Table Filtering"; Rec."Enable Table Filtering")
+                field("Table Capture Scope"; Rec."Table Capture Scope")
                 {
                     ApplicationArea = All;
-                    ToolTip = 'Enable custom table include/exclude filtering';
-                }
-
-                field("Table Filter Mode"; Rec."Table Filter Mode")
-                {
-                    ApplicationArea = All;
-                    ToolTip = 'Include Only: Capture only tables marked as Include. Exclude Only: Capture all tables except those marked as Exclude.';
-                    Enabled = Rec."Enable Table Filtering";
-                }
-            }
-
-            group(FieldFiltering)
-            {
-                Caption = 'Field Filtering';
-
-                field("Enable Field Filtering"; Rec."Enable Field Filtering")
-                {
-                    ApplicationArea = All;
-                    ToolTip = 'Enable field-level filtering for captured data';
+                    ToolTip = 'Choose what to capture. All Tables: everything. Only Selected Tables: only the tables in Table Filters (whitelist). All Except Selected Tables: everything except the tables in Table Filters (blacklist).';
                 }
             }
 
@@ -46,7 +28,8 @@ page 50004 "Data Debugger Setup"
                 field("Enable Change Threshold"; Rec."Enable Change Threshold")
                 {
                     ApplicationArea = All;
-                    ToolTip = 'Only capture modifications that change a minimum number of fields';
+                    ToolTip = 'Disabled: change-threshold filtering is not currently supported and is locked off to prevent capture errors during modifications.';
+                    Editable = false;
                 }
 
                 field("Min Field Changes Required"; Rec."Min Field Changes Required")

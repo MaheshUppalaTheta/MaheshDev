@@ -23,18 +23,6 @@ page 50005 "Data Debugger Table Filters"
                     ToolTip = 'The name of the table';
                 }
 
-                field("Filter Type"; Rec."Filter Type")
-                {
-                    ApplicationArea = All;
-                    ToolTip = 'Whether to include or exclude this table';
-                }
-
-                field("Field Filters"; Rec."Field Filters")
-                {
-                    ApplicationArea = All;
-                    ToolTip = 'Comma-separated list of field names to include/exclude (leave blank for all fields)';
-                }
-
                 field(Enabled; Rec.Enabled)
                 {
                     ApplicationArea = All;
@@ -48,16 +36,42 @@ page 50005 "Data Debugger Table Filters"
     {
         area(Processing)
         {
+            action(SelectFields)
+            {
+                Caption = 'Select Fields';
+                ToolTip = 'Pick which fields of this table to capture. Leave none selected to capture all fields. Re-opening shows your current selection so you can add or remove fields.';
+                Image = SelectField;
+
+                trigger OnAction()
+                var
+                    FieldSelection: Page "DD Field Selection";
+                begin
+                    if Rec."Table ID" = 0 then begin
+                        Message('Enter a Table ID first, then pick its fields.');
+                        exit;
+                    end;
+                    FieldSelection.SetTableId(Rec."Table ID");
+                    FieldSelection.RunModal();
+                end;
+            }
             action(AddSystemTables)
             {
                 Caption = 'Add Common System Tables';
-                ToolTip = 'Add commonly excluded system tables';
+                ToolTip = 'Add commonly noisy system tables to this list. Useful with the "All Except Selected Tables" capture scope to keep them out of recordings.';
                 Image = AddWatch;
 
                 trigger OnAction()
                 begin
                     AddCommonSystemTables();
                 end;
+            }
+        }
+        area(Promoted)
+        {
+            group(Category_Process)
+            {
+                actionref(SelectFields_Promoted; SelectFields) { }
+                actionref(AddSystemTables_Promoted; AddSystemTables) { }
             }
         }
     }
@@ -87,7 +101,6 @@ page 50005 "Data Debugger Table Filters"
                 if not TableFilter.FindFirst() then begin
                     TableFilter.Init();
                     TableFilter."Table ID" := SystemTables[i];
-                    TableFilter."Filter Type" := TableFilter."Filter Type"::Exclude;
                     TableFilter.Enabled := true;
                     TableFilter.Insert(true);
                 end;

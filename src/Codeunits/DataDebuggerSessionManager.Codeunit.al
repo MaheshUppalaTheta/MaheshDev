@@ -13,7 +13,11 @@ codeunit 50000 "Data Debugger Session Manager"
     procedure StartRecording(): Guid
     var
         ContextManager: Codeunit "Data Debugger Context Manager";
+        FilterManager: Codeunit "Data Debugger Filter Manager";
     begin
+        // Pick up any setup changes made since the client session started.
+        FilterManager.ReloadSetup();
+
         // Clear any existing buffer
         TempChangeBuffer.Reset();
         TempChangeBuffer.DeleteAll();
@@ -51,9 +55,8 @@ codeunit 50000 "Data Debugger Session Manager"
         DataDebuggerResults.SetData(TempChangeBuffer, CurrentRunId, SessionStartTime);
         DataDebuggerResults.RunModal();
 
-        // Clear the buffer after results page is closed
-        TempChangeBuffer.Reset();
-        TempChangeBuffer.DeleteAll();
+        // Data is now persisted and kept after the session ends.
+        // It is wiped at the start of the next recording (see StartRecording).
         Clear(CurrentRunId);
     end;
 
@@ -82,6 +85,7 @@ codeunit 50000 "Data Debugger Session Manager"
 
         TempChangeBuffer.Init();
         TempChangeBuffer."Entry No." := TempChangeBuffer.Count() + 1;
+        // "Entry No." is AutoIncrement on this persisted table - let the platform assign it.
         TempChangeBuffer."Run ID" := CurrentRunId;
         TempChangeBuffer.Timestamp1 := CurrentDateTime();
         TempChangeBuffer."Table ID" := TableId;
@@ -131,6 +135,8 @@ codeunit 50000 "Data Debugger Session Manager"
         TempChangeBuffer.Reset();
         if TempChangeBuffer.FindSet() then
             repeat
+                // Load BLOBs so they are carried by the assignment into the temporary buffer.
+                TempChangeBuffer.CalcFields("Old Data", "New Data", "Call Stack");
                 TempBuffer := TempChangeBuffer;
                 TempBuffer.Insert();
             until TempChangeBuffer.Next() = 0;
