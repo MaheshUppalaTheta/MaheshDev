@@ -188,22 +188,6 @@ page 50008 "DD Advanced Analysis"
                     ViewRecommendationDetails();
                 end;
             }
-
-            action(CompareRecords)
-            {
-                Caption = 'Compare Records';
-                ToolTip = 'Open visual record comparison tool';
-                Image = ViewDetails;
-                ApplicationArea = all;
-
-                trigger OnAction()
-                var
-                    RecordComparisonPage: Page "DD Record Comparison";
-                begin
-                    RecordComparisonPage.SetComparisonRecord(SourceChangeBuffer);
-                    RecordComparisonPage.RunModal();
-                end;
-            }
         }
     }
 

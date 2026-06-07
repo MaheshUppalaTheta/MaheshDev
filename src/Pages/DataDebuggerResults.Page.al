@@ -177,21 +177,6 @@ page 50001 "Data Debugger Results"
                     ApplicationArea = All;
                     ToolTip = 'What triggered this change';
                 }
-
-                field(ViewComparison; ViewComparisonText)
-                {
-                    ApplicationArea = All;
-                    Caption = 'Record Comparison';
-                    ToolTip = 'Click to open visual record comparison';
-                    Editable = false;
-                    Style = StandardAccent;
-                    StyleExpr = true;
-
-                    trigger OnDrillDown()
-                    begin
-                        OpenRecordComparison();
-                    end;
-                }
             }
         }
     }
@@ -330,12 +315,6 @@ page 50001 "Data Debugger Results"
         OriginalBuffer: Record "Data Debugger Change Buffer" temporary;
         OriginalTotal: Integer;
         HasActiveFilters: Boolean;
-        ViewComparisonText: Text[30];
-
-    trigger OnAfterGetRecord()
-    begin
-        ViewComparisonText := 'Click to View';
-    end;
 
     procedure SetData(var TempBuffer: Record "Data Debugger Change Buffer" temporary; RunId: Guid; StartTime: DateTime)
     begin
@@ -553,27 +532,5 @@ page 50001 "Data Debugger Results"
         DownloadFromStream(InStream, 'Export Results', '', 'JSON Files (*.json)|*.json', FileName);
 
         Message('Results exported to JSON successfully.');
-    end;
-
-    local procedure OpenRecordComparison()
-    var
-        RecordComparisonPage: Page "DD Record Comparison";
-        TempChangeBuffer: Record "Data Debugger Change Buffer" temporary;
-    begin
-        if Rec."Entry No." = 0 then begin
-            Message('No record selected for comparison.');
-            exit;
-        end;
-
-        // CalcFields to load BLOB data before copying
-        Rec.CalcFields("Old Data", "New Data");
-
-        // Create a temporary record with the current record data
-        TempChangeBuffer := Rec;
-        TempChangeBuffer.Insert();
-
-        // Open the record comparison page
-        RecordComparisonPage.SetComparisonRecord(TempChangeBuffer);
-        RecordComparisonPage.RunModal();
     end;
 }
