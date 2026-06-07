@@ -13,7 +13,7 @@
 | Context Enrichment | Codeunit 50003 `Context Manager` | Augments each change with user/session/company metadata, client type, rolling transaction IDs, call-stack text, and trigger source. |
 | Session Orchestration | Codeunit 50000 `Session Manager` | Starts/stops runs, holds the in-memory `Change Buffer` (table 50000), exposes live stats, and launches downstream pages. |
 | Analytics | Codeunit 50004 `Analysis Engine` + table 50004 | Generates impact, performance, pattern/burst, relationship, and temporary-vs-real insights stored in the `Analysis Buffer`. |
-| UI & Visualization | Pages 50000-50013 + control add-in | Card/List pages for recording control, live stats, results, advanced analysis, context/transaction/table views, and a jsondiffpatch-based record comparison add-in. |
+| UI & Visualization | Pages 50000-50009 (+ helper pages) | Card/List pages for recording control, live stats, results, advanced analysis, and context/transaction/table views. |
 
 ## Operational Flow
 1. **Setup (optional):** Use `Data Debugger Setup` + `Table Filter` pages to configure include/exclude lists, field filtering, change thresholds, and throttling caps.
@@ -21,10 +21,9 @@
 3. **Event Capture:** Global trigger subscribers call `Filter Manager` (table allow/deny, `CanCaptureNow()`, optional `ShouldCaptureModification()`) before serializing old/new JSON and delegating to `Session Manager.AddChange()`.
 4. **Context Injection:** Session Manager invokes context manager hooks so every `Change Buffer` row contains user details, transaction grouping, call stack, client type, and trigger source text.
 5. **Exploration & Analysis:**
-   - **Results** page filters/drilldowns into captured rows, opens context/field changes, transaction/table summaries, exports (Excel/JSON), and launches advanced analysis or record comparison.
+   - **Results** page filters/drilldowns into captured rows, opens context/field changes, transaction/table summaries, exports (Excel/JSON), and launches advanced analysis.
    - **Live Stats** page aggregates totals, rate, most-active tables/users, session duration, and last activity (with optional auto-refresh).
    - **Advanced Analysis** page copies the buffer, runs the analysis engine, filters by type/severity/category, exports to Excel, and surfaces recommendations.
-6. **Record Comparison:** `DD Record Comparison` page + control add-in load Old/New JSON and field metadata into jsondiffpatch visual diffing (with drill-down actions and exports).
 
 ## Feature Highlights
 ### Advanced Analysis Suite
@@ -68,17 +67,14 @@
 - **Platform:** Business Central 26.0+ (on-premises or cloud), runtime 15.0.
 - **Features:** NoImplicitWith (runtime feature flag).
 - **Permissions:** Read access to Table Metadata, Field, AllObjWithCaption; write access to temporary buffers during session.
-- **Browser:** Modern browser supporting ES6 for control add-in (jsondiffpatch requires UMD module support).
-- **External Dependencies:** jsondiffpatch 0.4.1 loaded from unpkg.com CDN (Scripts/StyleSheets in control add-in definition).
 
 ## User Interfaces & Navigation
 | Page | Purpose |
 | --- | --- |
 | `Data Debugger` (Card 50000) | Start/stop control, status banner, live stats preview, links to setup and live analysis. |
-| `Data Debugger Results` (List 50001) | Filterable grid with field/context drilldowns, table/transaction summaries, exports, advanced analysis launch, and record comparison. |
+| `Data Debugger Results` (List 50001) | Filterable grid with field/context drilldowns, table/transaction summaries, exports, and advanced analysis launch. |
 | `Data Debugger Live Stats` (Card 50009) | Auto-refreshing aggregates, most-active tables/users, quick links to analysis/results. |
-| `DD Advanced Analysis` (List 50008) | Runs analysis engine, filters by type/severity/category, exports findings, shows recommendations, opens record comparison. |
-| `DD Record Comparison` + selector pages | Host the control add-in, display record metadata, interpret add-in events (field select, related records, exports). |
+| `DD Advanced Analysis` (List 50008) | Runs analysis engine, filters by type/severity/category, exports findings, and shows recommendations. |
 
 ## Troubleshooting Quick Reference
 ### Global Triggers Silent
@@ -97,7 +93,7 @@
   2. Patch Event Handlers: Accept `xRecRef` from `OnDatabaseModify` event parameter, pass it to `ShouldCaptureModification()` and `CaptureModify()`.
 
 ### Old/New Data Identical in Modify Events
-- **Symptoms:** Record comparison shows no differences; field changes page lists no changed fields.
+- **Symptoms:** Field Changes page lists no changed fields.
 - **Root Cause:** `OnAfterOnGlobalModify` reloads the record after modification (via `xRecRef.Get(RecRef.RecordId)`), capturing the **new** state twice instead of old vs new.
 - **Workaround:** Patch Event Handlers to use the `xRecRef` parameter provided by the global trigger event instead of reloading.
 
@@ -127,13 +123,6 @@
   1. File permissions → check temp folder write access.
   2. Excel Buffer missing → ensure base app references are correct.
   3. BLOB data not loaded → pages must call `CalcFields("Old Data", "New Data", "Call Stack")` before export.
-
-### Control Add-in Not Loading
-- **Symptoms:** Record Comparison page blank, no jsondiffpatch visualization.
-- **Causes:**
-  1. CDN blocked → unpkg.com must be accessible from browser.
-  2. Browser compatibility → requires ES6 module support.
-  3. Script/stylesheet paths → verify relative paths in control add-in definition match deployment.
 
 ### Analysis Returns No Results
 - **Symptoms:** Advanced Analysis page empty after clicking Refresh Analysis.
@@ -188,18 +177,15 @@
 | Page | Object ID | Type | Key Actions | Navigation Target |
 | --- | --- | --- | --- | --- |
 | Data Debugger | 50000 | Card | Start Recording, Stop Recording, Setup, Live Analysis, Refresh Stats | Main entry point; launches Setup (50004), Live Stats (50009) |
-| Data Debugger Results | 50001 | List | View Field Changes, View Call Stack, Group by Table, Group by Transaction, Export to Excel/JSON, Advanced Analysis, Clear Filters, Record Comparison | Opens Field Changes (50002), Context Details (50006), Table Summary (50003), Transactions (50007), Advanced Analysis (50008), Record Comparison (50011) |
+| Data Debugger Results | 50001 | List | View Field Changes, View Call Stack, Group by Table, Group by Transaction, Export to Excel/JSON, Advanced Analysis, Clear Filters | Opens Field Changes (50002), Context Details (50006), Table Summary (50003), Transactions (50007), Advanced Analysis (50008) |
 | Data Debugger Field Changes | 50002 | List | Show Only Changed Fields, Export to Excel, Copy to Clipboard | Parses Old/New JSON, displays field-by-field diff in Name/Value Buffer |
 | Data Debugger Table Summary | 50003 | List | View Table Changes | Aggregates changes by table, drills back to Results filtered by table |
 | Data Debugger Setup | 50004 | Card | Table Filters | Opens Table Filters (50005); edits Setup singleton |
 | Data Debugger Table Filters | 50005 | List | Add Common System Tables | Manages Table Filter (50002) records; pre-populates exclusion list |
 | Data Debugger Context Details | 50006 | Card | Copy Call Stack, Export Context | Displays user/session/transaction/call stack for selected change |
 | Data Debugger Transactions | 50007 | List | View Transaction Changes | Groups changes by Transaction ID, drills into filtered Results |
-| DD Advanced Analysis | 50008 | List | Refresh Analysis, View Details, Export Analysis, Show Recommendations, Compare Records | Runs Analysis Engine, filters results, shows recommendations dialog, launches Record Comparison |
+| DD Advanced Analysis | 50008 | List | Refresh Analysis, View Details, Export Analysis, Show Recommendations | Runs Analysis Engine, filters results, shows recommendations dialog |
 | Data Debugger Live Stats | 50009 | Card | Refresh, Detailed Analysis, View All Results | Auto-refresh stats, opens Advanced Analysis or Results from active session |
-| DD Record Comparison | 50011 | Card | Load Comparison, Refresh, Export, Show Field Details | Hosts control add-in, loads Old/New JSON + metadata into jsondiffpatch visualizer |
-| DD Field Comparison Details | 50012 | Card | (View only) | Drill-down from Record Comparison; shows single-field diff with old/new values, lengths, change type |
-| DD Record Comparison Selection | 50013 | List | Select Record, View Details, Compare Record | Selection dialog for Record Comparison page |
 
 ## Key Implementation Patterns
 ### Event Subscriber Architecture
@@ -221,11 +207,6 @@
 - **Pattern Detection:** High-volume pattern if count > 50 (Critical if > 200), burst if ≥10 changes within 1 second.
 - **Performance Metrics:** Max gap > 60 seconds triggers Warning severity.
 - **Table Type Analysis:** Warning if temp usage > 70%, Info otherwise.
-
-### Control Add-in Integration
-- **Scripts:** External jsondiffpatch UMD bundle + local RecordComparison.js/Startup.js.
-- **Events:** `OnFieldSelected`, `OnViewRelatedRecords`, `OnExportReady`, `OnFiltersChanged` bridge add-in actions to AL.
-- **Methods:** `Initialize(config)`, `LoadComparison(oldData, newData, metadata)`, `ApplyFilters(filters)`, `ExportComparison(format)`, `ClearData()`.
 
 ### Export Mechanisms
 - **Excel Export:** Uses `Excel Buffer` temporary table with headers/data rows, calls `CreateNewBook()` / `WriteSheet()` / `SetFriendlyFilename()` / `OpenExcel()`.
