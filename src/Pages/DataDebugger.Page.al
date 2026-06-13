@@ -174,6 +174,24 @@ page 50000 "Data Debugger"
                     UpdateStatus();
                 end;
             }
+            action(ClearData)
+            {
+                Caption = 'Clear Captured Data';
+                ToolTip = 'Delete all previously captured change entries before starting a new recording. Cannot be undone.';
+                Image = Delete;
+                Enabled = StatusText <> 'RECORDING';
+
+                trigger OnAction()
+                begin
+                    if not Confirm('Delete all captured change entries? This cannot be undone.', false) then
+                        exit;
+
+                    SessionManager.ClearCapturedData();
+                    UpdateStatus();
+                    Message('Captured data cleared.');
+                end;
+            }
+
             action(ViewResults)
             {
                 Caption = 'View All Results';

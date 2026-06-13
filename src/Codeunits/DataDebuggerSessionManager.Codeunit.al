@@ -167,6 +167,21 @@ codeunit 50000 "Data Debugger Session Manager"
         ChangeBuffer.Insert();
     end;
 
+    /// <summary>
+    /// Deletes all previously captured change entries so a fresh recording starts clean.
+    /// Safe to call between runs; blocked while a recording is active.
+    /// </summary>
+    procedure ClearCapturedData()
+    var
+        ChangeBuffer: Record "Data Debugger Change Buffer";
+    begin
+        if IsActive() then
+            Error('Stop the current recording before clearing captured data.');
+
+        ChangeBuffer.Reset();
+        ChangeBuffer.DeleteAll();
+    end;
+
     local procedure GetTotalChangeCount(RunId: Guid): Integer
     var
         ChangeBuffer: Record "Data Debugger Change Buffer";
