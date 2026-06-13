@@ -37,3 +37,8 @@ temp/
 # Environment variables
 .env
 .env.local
+
+# AL / Business Central build & test outputs
+out/
+TestResults.xml
+.altestrunner/

@@ -21,6 +21,44 @@ page 50000 "Data Debugger"
                     StyleExpr = StatusText = 'RECORDING';
                 }
 
+                field(RecordUserField; RecordUserId)
+                {
+                    Caption = 'Record User';
+                    ToolTip = 'Select the user whose database operations will be captured. Only this user''s changes are recorded; everyone else is ignored. Defaults to you.';
+                    Editable = StatusText <> 'RECORDING';
+
+                    trigger OnLookup(var Text: Text): Boolean
+                    var
+                        User: Record User;
+                        Users: Page "Users";
+                    begin
+                        Users.LookupMode(true);
+                        if Users.RunModal() <> Action::LookupOK then
+                            exit(false);
+
+                        Users.GetRecord(User);
+                        SetRecordUser(User);
+                        Text := RecordUserId;
+                        exit(true);
+                    end;
+
+                    trigger OnValidate()
+                    var
+                        User: Record User;
+                    begin
+                        if RecordUserId = '' then begin
+                            Clear(RecordUserSecurityId);
+                            RecordUserName := '';
+                            exit;
+                        end;
+
+                        User.SetRange("User Name", RecordUserId);
+                        if not User.FindFirst() then
+                            Error('User ''%1'' was not found. Use the lookup to pick a valid user.', RecordUserId);
+                        SetRecordUser(User);
+                    end;
+                }
+
                 field(RunIdField; CurrentRunIdText)
                 {
                     Caption = 'Current Run ID';
@@ -102,8 +140,10 @@ page 50000 "Data Debugger"
 
                 trigger OnAction()
                 begin
-                    BindSubscription(DDEventHandler);
-                    SessionManager.StartRecording();
+                    if IsNullGuid(RecordUserSecurityId) then
+                        Error('Select a user in "Record User" before starting.');
+
+                    SessionManager.StartRecording(RecordUserSecurityId, RecordUserId, RecordUserName);
                     UpdateStatus();
                     UpdateLiveStats();
                 end;
@@ -132,7 +172,19 @@ page 50000 "Data Debugger"
                 begin
                     SessionManager.StopRecording();
                     UpdateStatus();
-                    UnbindSubscription(DDEventHandler);
+                end;
+            }
+            action(ViewResults)
+            {
+                Caption = 'View All Results';
+                ToolTip = 'Open the main results page';
+                Image = View;
+
+                trigger OnAction()
+                var
+                    SessionManager: Codeunit "Data Debugger Session Manager";
+                begin
+                    SessionManager.ShowResults();
                 end;
             }
 
@@ -154,19 +206,42 @@ page 50000 "Data Debugger"
 
     var
         SessionManager: Codeunit "Data Debugger Session Manager";
-        DDEventHandler: Codeunit "Data Debugger Event Handlers";
         StatusText: Text;
         CurrentRunIdText: Text;
+        RecordUserId: Code[50];
+        RecordUserName: Text[80];
+        RecordUserSecurityId: Guid;
         TotalChangesCount: Integer;
         ChangesPerSecond: Decimal;
         RecordingDuration: Text;
         LastCaptureInfo: Text;
 
-        InstructionLabel: Label 'Click "Start Recording" to begin capturing database changes. Perform your business process, then click "Stop Recording" to view the results. All captured data is temporary and will be discarded when you close the results page.';
+        InstructionLabel: Label 'Select the user to record in "Record User" (defaults to you), then click "Start Recording". Only that user''s database operations are captured, anywhere in Business Central, subject to the table and field filters in Setup. Perform the business process as that user, then click "Stop Recording" to view the results. Captured data is persisted and is cleared when the next recording starts.';
 
     trigger OnOpenPage()
+    var
+        User: Record User;
     begin
+        // Default the recorded user to the current user.
+        if User.Get(UserSecurityId()) then
+            SetRecordUser(User)
+        else begin
+            RecordUserId := CopyStr(UserId(), 1, MaxStrLen(RecordUserId));
+            RecordUserSecurityId := UserSecurityId();
+            RecordUserName := CopyStr(UserId(), 1, MaxStrLen(RecordUserName));
+        end;
+
         UpdateStatus();
+    end;
+
+    local procedure SetRecordUser(User: Record User)
+    begin
+        RecordUserId := User."User Name";
+        RecordUserSecurityId := User."User Security ID";
+        if User."Full Name" <> '' then
+            RecordUserName := CopyStr(User."Full Name", 1, MaxStrLen(RecordUserName))
+        else
+            RecordUserName := CopyStr(User."User Name", 1, MaxStrLen(RecordUserName));
     end;
 
     local procedure UpdateStatus()
@@ -174,6 +249,8 @@ page 50000 "Data Debugger"
         if SessionManager.IsActive() then begin
             StatusText := 'RECORDING';
             CurrentRunIdText := Format(SessionManager.GetCurrentRunId());
+            // Reflect the user actually being recorded (set when the run started).
+            RecordUserId := SessionManager.GetRecordingUserId();
         end else begin
             StatusText := 'STOPPED';
             CurrentRunIdText := '';

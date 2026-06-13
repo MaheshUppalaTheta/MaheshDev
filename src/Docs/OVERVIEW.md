@@ -3,22 +3,22 @@
 ## Product Snapshot
 - **Purpose:** Capture Business Central database activity in near real time, enrich each change with context, and surface insights that help troubleshoot, optimize, and audit business processes.
 - **Version / Platform:** Extension v1.0.0.0 targeting Business Central 26.0+ (runtime 15.0) with object range 50000-50149.
-- **Primary Use Cases:** Real-time change tracking, performance diagnostics, behavior analysis, compliance auditing, and developer troubleshooting.
+- **Primary Use Cases:** Per-user change tracking (record one selected user's operations environment-wide), performance diagnostics, behavior analysis, compliance auditing, and developer troubleshooting.
 
 ## Functional Layers
 | Layer | Objects | Responsibilities |
 | --- | --- | --- |
-| Event Intake | Codeunit 50001 `Data Debugger Event Handlers` | Subscribes to global database triggers, enforces capture guardrails (table filters, throttling, change thresholds), and serializes record snapshots. |
+| Event Intake | Codeunit 50001 `Data Debugger Event Handlers` | **Automatic** subscribers on the global database triggers (active in every session). Each event is gated by `Session Manager.ShouldCapture()` so only the recorded user's changes pass, then enforces capture guardrails (table filters, throttling, change thresholds) and serializes record snapshots. |
 | Filtering & Setup | Codeunit 50002 + Tables 50001/50002 | Centralized filter policy (table allow/deny, field projection, threshold checks, per-second limits) backed by `Data Debugger Setup` and `Table Filter` data. |
 | Context Enrichment | Codeunit 50003 `Context Manager` | Augments each change with user/session/company metadata, client type, rolling transaction IDs, real AL call stack (`SessionInformation.Callstack()`, BC 26+), and a derived trigger source label (Database Insert/Modify/Delete/Rename). |
-| Session Orchestration | Codeunit 50000 `Session Manager` | Starts/stops runs, holds the in-memory `Change Buffer` (table 50000), exposes live stats, and launches downstream pages. |
+| Session Orchestration | Codeunit 50000 `Session Manager` | Starts/stops runs, persists recording state (active flag, run id, recorded user) in `DD Recording State` (table 50007) so every session can read it, writes captures to the persisted `Change Buffer` (table 50000), exposes live stats, and launches downstream pages. |
 | Analytics | Codeunit 50004 `Analysis Engine` + table 50004 | Generates impact, performance, pattern/burst, relationship, and temporary-vs-real insights stored in the `Analysis Buffer`. |
 | UI & Visualization | Pages 50000-50009 (+ helper pages) | Card/List pages for recording control, live stats, results, advanced analysis, and context/transaction/table views. |
 
 ## Operational Flow
 1. **Setup (optional):** Use `Data Debugger Setup` + `Table Filter` pages to configure include/exclude lists, field filtering, change thresholds, and throttling caps.
-2. **Recording Lifecycle:** On `Data Debugger` (page 50000) click **Start Recording** (binds handlers, resets temp buffer) → perform business process → **Stop Recording** (opens results, clears buffer).
-3. **Event Capture:** Global trigger subscribers call `Filter Manager` (table allow/deny, `CanCaptureNow()`, optional `ShouldCaptureModification()`) before serializing old/new JSON and delegating to `Session Manager.AddChange()`.
+2. **Recording Lifecycle:** On `Data Debugger` (page 50000) choose the user in **Record User** (defaults to you), click **Start Recording** (writes recording state, clears the previous run's buffer) → the recorded user performs the business process (in their own session, anywhere) → **Stop Recording** (flips the state off, opens results).
+3. **Event Capture:** The automatic global-trigger subscribers fire in the acting user's session. Each first checks `Session Manager.ShouldCapture()` (recording active **and** the session belongs to the selected user, matched on User Security ID), then `Filter Manager` (table allow/deny, `CanCaptureNow()`, optional `ShouldCaptureModification()`) before serializing old/new JSON and delegating to `Session Manager.AddChange()`.
 4. **Context Injection:** Session Manager invokes context manager hooks so every `Change Buffer` row contains user details, transaction grouping, call stack, client type, and trigger source text.
 5. **Exploration & Analysis:**
    - **Results** page filters/drilldowns into captured rows, opens context/field changes, transaction/table summaries, exports (Excel/JSON), and launches advanced analysis.
@@ -81,10 +81,10 @@
 ### Global Triggers Silent
 - **Symptoms:** Recording starts but no changes captured, results page empty.
 - **Root Causes:**
-  1. `SessionManager.IsActive()` returns false → verify Start Recording was clicked and succeeded.
+  1. `SessionManager.ShouldCapture()` returns false → either no recording is active, or the change was made by a different user than the one selected in **Record User** (match is on User Security ID).
   2. `FilterManager.IsTableAllowed()` returns false → check Setup table filters; system tables are excluded by default.
   3. `GetDatabaseTableTriggerSetup` not running → add temporary `Message('Setup for table %1', TableId)` to verify invocation.
-- **Event Binding:** If using `EventSubscriberInstance = Manual`, ensure `BindSubscription(DDEventHandler)` is called in Start Recording and `UnbindSubscription()` in Stop. Consider switching to automatic subscribers (remove Manual property and binding logic).
+- **Subscribers:** The handlers are **automatic** (no `BindSubscription`), so they run in every session. If nothing is captured, confirm a recording is active and that the operations are performed by the **selected** user. Note the platform caches `GetDatabaseTableTriggerSetup` per session, so changing the table filters may not take effect in sessions that are already open.
 
 ### No Modifications Captured (Inserts/Deletes Work)
 - **Symptoms:** Insert and delete events appear, but modify operations are missing.
@@ -159,6 +159,12 @@
 - **Performance:** Max Records Per Session (Integer, default 10000), Enable Performance Throttling (Boolean), Max Captures Per Second (Integer, default 100)
 - **Helper Method:** `GetSetup()` creates and returns singleton record with defaults
 
+**DD Recording State (50007)**
+- **Singleton:** Primary Key = '' (empty string); created on demand by `GetState()`.
+- **Purpose:** Holds cross-session recording state so the always-on capture handlers (which run in the recorded user's session) can read it.
+- **Fields:** `Is Recording` (Boolean), `Run ID` (Guid), `Recorded User Security ID` (Guid — the match key against `UserSecurityId()`), `Recorded User ID` (Code[50], login name for display), `Recorded User Name` (Text[80]), `Start Time` (DateTime).
+- **Written by:** Session Manager `StartRecording`/`StopRecording`. **Read by:** every session's capture path (cached ~1s via `EnsureCacheFresh`).
+
 **Data Debugger Table Filter (50002)**
 - **Fields:** Entry No., Table ID (lookup to AllObjWithCaption), Table Name (auto-populated), Enabled (Boolean). Table membership is defined by a row's presence + Enabled; the Setup **Capture Scope** decides whether the list is a whitelist or blacklist. Per-field capture selections live in the separate persisted table `DD Field Selection Buffer` (50005), and are cascade-deleted via this table's OnDelete trigger.
 - **Trigger Behavior:** OnInsert/OnModify automatically updates Table Name from metadata
@@ -176,7 +182,7 @@
 ## Page Catalog with Actions
 | Page | Object ID | Type | Key Actions | Navigation Target |
 | --- | --- | --- | --- | --- |
-| Data Debugger | 50000 | Card | Start Recording, Stop Recording, Setup, Live Analysis, Refresh Stats | Main entry point; launches Setup (50004), Live Stats (50009) |
+| Data Debugger | 50000 | Card | Record User (select), Start Recording, Stop Recording, Setup, Live Analysis, Refresh Stats | Main entry point; pick the user to record (User-table lookup, defaults to you), then start/stop; launches Setup (50004), Live Stats (50009) |
 | Data Debugger Results | 50001 | List | View Field Changes, View Call Stack, Group by Table, Group by Transaction, Export to Excel/JSON, Advanced Analysis, Clear Filters | Opens Field Changes (50002), Context Details (50006), Table Summary (50003), Transactions (50007), Advanced Analysis (50008). The **Table Filter** field has a drill-down (`DD Table Pick`, 50112, backed by `DD Table Pick Buffer`, 50006) listing the tables present in the results with operation counts; picking one filters the grid to that table by Table ID. The captured Call Stack contains the real AL stack via `SessionInformation.Callstack()`. |
 | Data Debugger Field Changes | 50002 | List | Show Only Changed Fields, Export to Excel, Copy to Clipboard | Parses Old/New JSON, displays field-by-field diff in Name/Value Buffer |
 | Data Debugger Table Summary | 50003 | List | View Table Changes | Aggregates changes by table, drills back to Results filtered by table |
@@ -203,9 +209,10 @@ These OData v4 API objects expose the persisted capture data for external consum
 
 ## Key Implementation Patterns
 ### Event Subscriber Architecture
-- **EventSubscriberInstance = Manual**: Requires explicit `BindSubscription(DDEventHandler)` / `UnbindSubscription(DDEventHandler)` calls in Start/Stop Recording actions.
-- **SingleInstance = true**: All manager codeunits maintain state across invocations within the same session.
-- **GetDatabaseTableTriggerSetup**: Must return `true` for Insert/Modify/Delete/Rename parameters to enable global triggers per table.
+- **Automatic subscribers**: The Event Handlers codeunit uses automatic (not `Manual`) subscribers on `Global Triggers`, so capture runs in every user session — this is what allows recording a *selected* user's operations regardless of which session they occur in (mirrors the base Change Log). No `BindSubscription` is used.
+- **User gating**: Every On* handler calls `Session Manager.ShouldCapture()`, which returns true only when a recording is active and `UserSecurityId()` matches the recorded user stored in `DD Recording State`. The state is cached per session for ~1 second to keep the always-on path cheap.
+- **SingleInstance = true**: All manager codeunits maintain state across invocations within the same session; cross-session truth (active flag, run id, recorded user) lives in `DD Recording State` (table 50007).
+- **GetDatabaseTableTriggerSetup**: Gated on table filters only (not on "is recording"), because the platform caches it per session — gating on recording state would stop already-open sessions from ever raising triggers. Returns `true` for Insert/Modify/Delete/Rename on allowed tables. **Footprint:** because it is always-on, choosing **Only Selected Tables** keeps the per-write overhead in idle sessions minimal.
 
 ### JSON Serialization Strategy
 - **RecordToJson()**: Iterates FieldRef, skips system fields/flowfields/BLOBs, formats by FieldType, applies field filtering before writing.

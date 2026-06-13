@@ -107,19 +107,7 @@ page 50009 "Data Debugger Live Stats"
                 end;
             }
 
-            action(ViewResults)
-            {
-                Caption = 'View All Results';
-                ToolTip = 'Open the main results page';
-                Image = View;
 
-                trigger OnAction()
-                var
-                    SessionManager: Codeunit "Data Debugger Session Manager";
-                begin
-                    SessionManager.ShowResults();
-                end;
-            }
         }
     }
 

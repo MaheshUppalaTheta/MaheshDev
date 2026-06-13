@@ -3,71 +3,119 @@ codeunit 50000 "Data Debugger Session Manager"
     SingleInstance = true;
 
     var
-        TempChangeBuffer: Record "Data Debugger Change Buffer";
-        CurrentRunId: Guid;
-        IsRecordingActive: Boolean;
-        SessionStartTime: DateTime;
-        LastCaptureTime: DateTime;
-        LastCaptureTable: Text;
+        // Per-session cache of the recording state. Capture-path code (which can run in any
+        // user's session on every database write) reads these instead of hitting the database
+        // each time. The cache is refreshed at most once per second.
+        CacheValid: Boolean;
+        CacheTime: DateTime;
+        CachedIsRecording: Boolean;
+        CachedRunId: Guid;
+        CachedRecUserSecId: Guid;
 
-    procedure StartRecording(): Guid
+    procedure StartRecording(RecUserSecurityId: Guid; RecUserId: Code[50]; RecUserName: Text): Guid
     var
+        State: Record "DD Recording State";
+        ChangeBuffer: Record "Data Debugger Change Buffer";
         ContextManager: Codeunit "Data Debugger Context Manager";
         FilterManager: Codeunit "Data Debugger Filter Manager";
+        NewRunId: Guid;
     begin
+        if IsNullGuid(RecUserSecurityId) then
+            Error('Select a user to record before starting.');
+
         // Pick up any setup changes made since the client session started.
         FilterManager.ReloadSetup();
 
-        // Clear any existing buffer
-        TempChangeBuffer.Reset();
-        TempChangeBuffer.DeleteAll();
+        // Clear any existing captured data from the previous run.
+        ChangeBuffer.Reset();
+        ChangeBuffer.DeleteAll();
 
-        // Generate new run ID and start recording
-        CurrentRunId := CreateGuid();
-        IsRecordingActive := true;
-        SessionStartTime := CurrentDateTime();
+        NewRunId := CreateGuid();
 
-        // Start new transaction context
+        State := State.GetState();
+        State."Is Recording" := true;
+        State."Run ID" := NewRunId;
+        State."Recorded User Security ID" := RecUserSecurityId;
+        State."Recorded User ID" := RecUserId;
+        State."Recorded User Name" := CopyStr(RecUserName, 1, MaxStrLen(State."Recorded User Name"));
+        State."Start Time" := CurrentDateTime();
+        State.Modify();
+
+        // Start a fresh transaction context for the recording session.
         ContextManager.StartNewTransaction();
 
-        Message('Data Debugger recording started. Run ID: %1', CurrentRunId);
-        exit(CurrentRunId);
+        InvalidateCache();
+
+        Message('Data Debugger recording started for user %1. Run ID: %2', RecUserId, NewRunId);
+        exit(NewRunId);
     end;
 
     procedure StopRecording()
     var
+        State: Record "DD Recording State";
+        TempBuffer: Record "Data Debugger Change Buffer" temporary;
         DataDebuggerResults: Page "Data Debugger Results";
         ContextManager: Codeunit "Data Debugger Context Manager";
+        RunId: Guid;
+        StartTime: DateTime;
     begin
-        if not IsRecordingActive then begin
+        State := State.GetState();
+        if not State."Is Recording" then begin
             Message('No active recording session found.');
             exit;
         end;
 
-        IsRecordingActive := false;
+        RunId := State."Run ID";
+        StartTime := State."Start Time";
+
+        State."Is Recording" := false;
+        State.Modify();
+        InvalidateCache();
 
         // End transaction context
         ContextManager.EndTransaction();
 
-        Message('Data Debugger recording stopped. Captured %1 changes.', GetTotalChangeCount());
+        Message('Data Debugger recording stopped. Captured %1 changes.', GetTotalChangeCount(RunId));
 
-        // Open results page with captured data
-        DataDebuggerResults.SetData(TempChangeBuffer, CurrentRunId, SessionStartTime);
-        DataDebuggerResults.RunModal();
-
-        // Data is now persisted and kept after the session ends.
-        // It is wiped at the start of the next recording (see StartRecording).
-        Clear(CurrentRunId);
+        // Open results page with captured data (persisted; survives the session).
+        // GetChanges(TempBuffer);
+        // DataDebuggerResults.SetData(TempBuffer, RunId, StartTime);
+        // DataDebuggerResults.RunModal();
     end;
 
     procedure IsActive(): Boolean
     begin
-        exit(IsRecordingActive);
+        EnsureCacheFresh();
+        exit(CachedIsRecording);
+    end;
+
+    /// <summary>
+    /// Returns true only when a recording is active AND the current session belongs to the
+    /// user selected for the run. This is the gate the global-trigger handlers use so that
+    /// only the chosen user's database operations are captured.
+    /// </summary>
+    procedure ShouldCapture(): Boolean
+    begin
+        EnsureCacheFresh();
+        if not CachedIsRecording then
+            exit(false);
+        exit(UserSecurityId() = CachedRecUserSecId);
     end;
 
     procedure GetCurrentRunId(): Guid
+    var
+        State: Record "DD Recording State";
     begin
-        exit(CurrentRunId);
+        State := State.GetState();
+        exit(State."Run ID");
+    end;
+
+    procedure GetRecordingUserId(): Code[50]
+    var
+        State: Record "DD Recording State";
+    begin
+        State := State.GetState();
+        exit(State."Recorded User ID");
     end;
 
     procedure AddChange(TableId: Integer; ChangeType: Enum "Data Debugger Change Type"; PrimaryKey: Text; OldDataJson: Text; NewDataJson: Text)
@@ -77,86 +125,102 @@ codeunit 50000 "Data Debugger Session Manager"
 
     procedure AddChange(TableId: Integer; ChangeType: Enum "Data Debugger Change Type"; PrimaryKey: Text; OldDataJson: Text; NewDataJson: Text; IsTemporaryTable: Boolean)
     var
+        ChangeBuffer: Record "Data Debugger Change Buffer";
         TableMetadata: Record "Table Metadata";
         ContextManager: Codeunit "Data Debugger Context Manager";
     begin
-        if not IsRecordingActive then
+        EnsureCacheFresh();
+        if not CachedIsRecording then
             exit;
 
-        TempChangeBuffer.Init();
-        TempChangeBuffer."Entry No." := TempChangeBuffer.Count() + 1;
-        // "Entry No." is AutoIncrement on this persisted table - let the platform assign it.
-        TempChangeBuffer."Run ID" := CurrentRunId;
-        TempChangeBuffer.Timestamp1 := CurrentDateTime();
-        TempChangeBuffer."Table ID" := TableId;
-        TempChangeBuffer."Change Type" := ChangeType;
-        TempChangeBuffer."Primary Key" := CopyStr(PrimaryKey, 1, MaxStrLen(TempChangeBuffer."Primary Key"));
-        TempChangeBuffer."Is Temporary Table" := IsTemporaryTable;
+        ChangeBuffer.Init();
+        // "Entry No." is AutoIncrement - let the platform assign it.
+        ChangeBuffer."Run ID" := CachedRunId;
+        ChangeBuffer.Timestamp1 := CurrentDateTime();
+        ChangeBuffer."Table ID" := TableId;
+        ChangeBuffer."Change Type" := ChangeType;
+        ChangeBuffer."Primary Key" := CopyStr(PrimaryKey, 1, MaxStrLen(ChangeBuffer."Primary Key"));
+        ChangeBuffer."Is Temporary Table" := IsTemporaryTable;
 
         // Get table name with temporary indicator
         if TableMetadata.Get(TableId) then begin
             if IsTemporaryTable then
-                TempChangeBuffer."Table Name" := TableMetadata.Name + ' (Temp)'
+                ChangeBuffer."Table Name" := TableMetadata.Name + ' (Temp)'
             else
-                TempChangeBuffer."Table Name" := TableMetadata.Name;
+                ChangeBuffer."Table Name" := TableMetadata.Name;
         end else begin
             if IsTemporaryTable then
-                TempChangeBuffer."Table Name" := Format(TableId) + ' (Temp)'
+                ChangeBuffer."Table Name" := Format(TableId) + ' (Temp)'
             else
-                TempChangeBuffer."Table Name" := Format(TableId);
+                ChangeBuffer."Table Name" := Format(TableId);
         end;
 
-        TempChangeBuffer.SetOldData(OldDataJson);
-        TempChangeBuffer.SetNewData(NewDataJson);
+        ChangeBuffer.SetOldData(OldDataJson);
+        ChangeBuffer.SetNewData(NewDataJson);
 
-        // Capture enhanced context information
-        ContextManager.CaptureUserContext(TempChangeBuffer);
-        ContextManager.CaptureTransactionContext(TempChangeBuffer);
-        ContextManager.CaptureCallStack(TempChangeBuffer);
+        // Capture enhanced context information. These run in the recorded user's own session,
+        // so the user/session/call-stack context reflects that user.
+        ContextManager.CaptureUserContext(ChangeBuffer);
+        ContextManager.CaptureTransactionContext(ChangeBuffer);
+        ContextManager.CaptureCallStack(ChangeBuffer);
 
-        // Update live statistics
-        LastCaptureTime := CurrentDateTime();
-        LastCaptureTable := TempChangeBuffer."Table Name";
-
-        TempChangeBuffer.Insert();
+        ChangeBuffer.Insert();
     end;
 
-    local procedure GetTotalChangeCount(): Integer
+    local procedure GetTotalChangeCount(RunId: Guid): Integer
+    var
+        ChangeBuffer: Record "Data Debugger Change Buffer";
     begin
-        TempChangeBuffer.Reset();
-        exit(TempChangeBuffer.Count());
+        ChangeBuffer.SetRange("Run ID", RunId);
+        exit(ChangeBuffer.Count());
     end;
 
     procedure GetChanges(var TempBuffer: Record "Data Debugger Change Buffer" temporary)
+    var
+        ChangeBuffer: Record "Data Debugger Change Buffer";
+        State: Record "DD Recording State";
     begin
         TempBuffer.Reset();
         TempBuffer.DeleteAll();
 
-        TempChangeBuffer.Reset();
-        if TempChangeBuffer.FindSet() then
+        State := State.GetState();
+        ChangeBuffer.SetRange("Run ID", State."Run ID");
+        if ChangeBuffer.FindSet() then
             repeat
                 // Load BLOBs so they are carried by the assignment into the temporary buffer.
-                TempChangeBuffer.CalcFields("Old Data", "New Data", "Call Stack");
-                TempBuffer := TempChangeBuffer;
+                ChangeBuffer.CalcFields("Old Data", "New Data", "Call Stack");
+                TempBuffer := ChangeBuffer;
                 TempBuffer.Insert();
-            until TempChangeBuffer.Next() = 0;
+            until ChangeBuffer.Next() = 0;
     end;
 
     procedure GetLiveStatistics(): Record "Data Debugger Live Stats"
     var
         Stats: Record "Data Debugger Live Stats";
+        State: Record "DD Recording State";
+        ChangeBuffer: Record "Data Debugger Change Buffer";
         Duration: Duration;
         TotalChanges: Integer;
         ChangesPerSecond: Decimal;
+        LastCaptureTime: DateTime;
+        LastCaptureTable: Text;
     begin
         Stats.Init();
 
-        if IsRecordingActive and (SessionStartTime <> 0DT) then begin
-            TotalChanges := GetTotalChangeCount();
-            Duration := CurrentDateTime() - SessionStartTime;
+        State := State.GetState();
+        if State."Is Recording" and (State."Start Time" <> 0DT) then begin
+            ChangeBuffer.SetCurrentKey("Run ID", Timestamp1);
+            ChangeBuffer.SetRange("Run ID", State."Run ID");
+            TotalChanges := ChangeBuffer.Count();
+            if ChangeBuffer.FindLast() then begin
+                LastCaptureTime := ChangeBuffer.Timestamp1;
+                LastCaptureTable := ChangeBuffer."Table Name";
+            end;
+
+            Duration := CurrentDateTime() - State."Start Time";
 
             Stats."Total Changes" := TotalChanges;
-            Stats."Start Time" := SessionStartTime;
+            Stats."Start Time" := State."Start Time";
             Stats."Last Capture Time" := LastCaptureTime;
 
             // Calculate changes per second
@@ -186,20 +250,59 @@ codeunit 50000 "Data Debugger Session Manager"
 
     procedure ShowResults()
     var
+        State: Record "DD Recording State";
+        TempBuffer: Record "Data Debugger Change Buffer" temporary;
         DataDebuggerResults: Page "Data Debugger Results";
     begin
-        if not IsRecordingActive then begin
-            Message('No active recording session found.');
-            exit;
-        end;
-
-        DataDebuggerResults.SetData(TempChangeBuffer, CurrentRunId, SessionStartTime);
+        State := State.GetState();
+        GetChanges(TempBuffer);
+        DataDebuggerResults.SetData(TempBuffer, State."Run ID", State."Start Time");
         DataDebuggerResults.RunModal();
     end;
 
     procedure GetSessionStartTime(): DateTime
+    var
+        State: Record "DD Recording State";
     begin
-        exit(SessionStartTime);
+        State := State.GetState();
+        exit(State."Start Time");
+    end;
+
+    internal procedure IsStateActive(): Boolean
+    var
+        State: Record "DD Recording State";
+    begin
+        if State.Get('') then
+            exit(State."Is Recording");
+        exit(false);
+    end;
+
+    local procedure EnsureCacheFresh()
+    var
+        State: Record "DD Recording State";
+    begin
+        if CacheValid then
+            exit;
+        if CacheTime <> 0DT then
+            if ((CurrentDateTime() - CacheTime) < 1000) then
+                exit;
+
+        if State.Get('') then begin
+            CachedIsRecording := State."Is Recording";
+            CachedRunId := State."Run ID";
+            CachedRecUserSecId := State."Recorded User Security ID";
+        end else begin
+            CachedIsRecording := false;
+            Clear(CachedRunId);
+            Clear(CachedRecUserSecId);
+        end;
+        CacheValid := true;
+        CacheTime := CurrentDateTime();
+    end;
+
+    local procedure InvalidateCache()
+    begin
+        CacheValid := false;
     end;
 
     local procedure FormatDuration(Duration: Duration): Text

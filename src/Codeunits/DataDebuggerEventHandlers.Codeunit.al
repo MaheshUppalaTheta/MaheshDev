@@ -1,6 +1,14 @@
 codeunit 50001 "Data Debugger Event Handlers"
 {
-    EventSubscriberInstance = Manual;
+    // Automatic subscribers: these fire in every user session (like the base Change Log), which
+    // is what lets the tool capture a *selected* user's operations no matter which session they
+    // happen in. The runtime gate `SessionManager.ShouldCapture()` keeps only the recorded user's
+    // changes while a recording is active; everything else exits immediately.
+    //
+    // IMPORTANT: these are AUTOMATIC subscribers (no EventSubscriberInstance = Manual). A manual
+    // subscriber would only fire for the session that called BindSubscription, so it could never
+    // capture a *different* user's operations. Automatic subscribers are active in every session;
+    // ShouldCapture() then keeps only the recorded user's changes.
     SingleInstance = true;
     InherentEntitlements = X;
     InherentPermissions = X;
@@ -13,8 +21,11 @@ codeunit 50001 "Data Debugger Event Handlers"
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"Global Triggers", 'GetDatabaseTableTriggerSetup', '', false, false)]
     local procedure GetDatabaseTableTriggerSetup(TableId: Integer; var OnDatabaseInsert: Boolean; var OnDatabaseModify: Boolean; var OnDatabaseDelete: Boolean; var OnDatabaseRename: Boolean)
     begin
-        if not SessionManager.IsActive() then
-            exit;
+        // Note: this is gated on table filters only, NOT on whether a recording is active. The
+        // platform caches the trigger setup per session, so gating on "is recording" would mean
+        // already-open sessions never raise triggers after a recording starts. The On* handlers
+        // below do the recording/user gating at runtime instead.
+
         if not FilterManager.IsTableAllowed(TableId) then
             exit;
 
@@ -27,7 +38,7 @@ codeunit 50001 "Data Debugger Event Handlers"
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"Global Triggers", 'OnDatabaseInsert', '', false, false)]
     local procedure OnAfterOnGlobalInsert(RecRef: RecordRef)
     begin
-        if not SessionManager.IsActive() then
+        if not SessionManager.ShouldCapture() then
             exit;
         if not FilterManager.IsTableAllowed(RecRef.Number()) then
             exit;
@@ -42,7 +53,7 @@ codeunit 50001 "Data Debugger Event Handlers"
         xRecRef: RecordRef;
         IsReadable: Boolean;
     begin
-        if not SessionManager.IsActive() then
+        if not SessionManager.ShouldCapture() then
             exit;
         if not FilterManager.IsTableAllowed(RecRef.Number()) then
             exit;
@@ -66,7 +77,7 @@ codeunit 50001 "Data Debugger Event Handlers"
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"Global Triggers", 'OnDatabaseDelete', '', false, false)]
     local procedure OnDatabaseDelete(RecRef: RecordRef)
     begin
-        if not SessionManager.IsActive() then
+        if not SessionManager.ShouldCapture() then
             exit;
         if not FilterManager.IsTableAllowed(RecRef.Number()) then
             exit;
@@ -78,7 +89,7 @@ codeunit 50001 "Data Debugger Event Handlers"
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"Global Triggers", 'OnDatabaseRename', '', false, false)]
     local procedure OnDatabaseRename(RecRef: RecordRef; xRecRef: RecordRef)
     begin
-        if not SessionManager.IsActive() then
+        if not SessionManager.ShouldCapture() then
             exit;
         if not FilterManager.IsTableAllowed(RecRef.Number()) then
             exit;
