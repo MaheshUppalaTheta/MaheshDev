@@ -18,6 +18,22 @@ page 50004 "Data Debugger Setup"
                 {
                     ApplicationArea = All;
                     ToolTip = 'Choose what to capture. All Tables: everything. Only Selected Tables: only the tables in Table Filters (whitelist). All Except Selected Tables: everything except the tables in Table Filters (blacklist).';
+
+                    trigger OnValidate()
+                    var
+                        TableFilterPage: Page "Data Debugger Table Filters";
+                    begin
+                        // A whitelist/blacklist scope needs a configured table list, so jump straight
+                        // to Table Filters. "All Tables" needs no list. Existing rows are kept either way.
+                        if Rec."Table Capture Scope" in [Rec."Table Capture Scope"::"Only Selected Tables",
+                                                         Rec."Table Capture Scope"::"All Except Selected Tables"] then begin
+                            CurrPage.SaveRecord();
+                            // Commit the saved scope so the write lock is released: RunModal (opening the
+                            // Table Filters page) is not allowed while a write transaction is open.
+                            Commit();
+                            TableFilterPage.RunModal();
+                        end;
+                    end;
                 }
             }
 

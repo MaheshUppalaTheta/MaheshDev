@@ -39,7 +39,7 @@ page 50005 "Data Debugger Table Filters"
             action(SelectFields)
             {
                 Caption = 'Select Fields';
-                ToolTip = 'Pick which fields of this table to capture. Leave none selected to capture all fields. Re-opening shows your current selection so you can add or remove fields.';
+                ToolTip = 'Review which fields of this table are captured. All fields are selected by default when you add a table; untick the ones you don''t want. Re-opening shows your current selection.';
                 Image = SelectField;
 
                 trigger OnAction()

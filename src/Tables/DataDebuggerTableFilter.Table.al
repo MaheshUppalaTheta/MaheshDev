@@ -41,11 +41,16 @@ table 50002 "Data Debugger Table Filter"
     trigger OnInsert()
     begin
         UpdateTableName();
+        // Adding a table means "capture everything" by default: pre-select all of its fields.
+        // The user can then open Select Fields and untick the ones they don't want.
+        PopulateAllFieldsSelected();
     end;
 
     trigger OnModify()
     begin
         UpdateTableName();
+        // Picking a (new) Table ID on an existing row also pre-selects that table's fields.
+        PopulateAllFieldsSelected();
     end;
 
     trigger OnDelete()
@@ -70,5 +75,34 @@ table 50002 "Data Debugger Table Filter"
     begin
         if AllObj.Get(AllObj."Object Type"::Table, "Table ID") then
             "Table Name" := AllObj."Object Name";
+    end;
+
+    local procedure PopulateAllFieldsSelected()
+    var
+        Fld: Record Field;
+        FieldSel: Record "DD Field Selection Buffer";
+    begin
+        if "Table ID" = 0 then
+            exit;
+
+        // Create a row for every capturable field, marked Selected, preserving any rows that
+        // already exist (so re-saving the filter row never wipes the user's manual choices).
+        Fld.SetRange(TableNo, "Table ID");
+        Fld.SetRange(Class, Fld.Class::Normal);
+        Fld.SetRange(Enabled, true);
+        Fld.SetFilter(Type, '<>%1', Fld.Type::BLOB);
+        if Fld.FindSet() then
+            repeat
+                if not FieldSel.Get("Table ID", Fld."No.") then begin
+                    FieldSel.Init();
+                    FieldSel."Table ID" := "Table ID";
+                    FieldSel."Field No." := Fld."No.";
+                    FieldSel."Field Name" := Fld.FieldName;
+                    FieldSel."Field Caption" := Fld."Field Caption";
+                    FieldSel."Type Name" := Fld."Type Name";
+                    FieldSel.Selected := true;
+                    FieldSel.Insert();
+                end;
+            until Fld.Next() = 0;
     end;
 }

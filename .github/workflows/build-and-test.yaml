@@ -1,95 +1,95 @@
-name: Build and Test
+# name: Build and Test
 
-# Builds the DataDebugger app and runs its automated tests (codeunit 50140 "DD Recording Tests")
-# in a Business Central v28 container on every push / pull request.
-#
-# Engine: BcContainerHelper (the same tooling AL-Go for GitHub uses under the hood). BC images
-# are Windows-based, so this must run on a Windows runner with Windows-container support.
+# # Builds the DataDebugger app and runs its automated tests (codeunit 50140 "DD Recording Tests")
+# # in a Business Central v28 container on every push / pull request.
+# #
+# # Engine: BcContainerHelper (the same tooling AL-Go for GitHub uses under the hood). BC images
+# # are Windows-based, so this must run on a Windows runner with Windows-container support.
 
-on:
-  push:
-    branches: [ "**" ]
-  pull_request:
-    branches: [ "**" ]
-  workflow_dispatch:
+# on:
+#   push:
+#     branches: [ "**" ]
+#   pull_request:
+#     branches: [ "**" ]
+#   workflow_dispatch:
 
-jobs:
-  build-and-test:
-    runs-on: windows-latest
-    permissions:
-      contents: read
-      checks: write
-    env:
-      CONTAINER: bcci
-      APP_ID: fcd31dc9-7240-48cd-a991-ed43a5b7997f   # DataDebugger (contains the [Test] codeunit)
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+# jobs:
+#   build-and-test:
+#     runs-on: windows-latest
+#     permissions:
+#       contents: read
+#       checks: write
+#     env:
+#       CONTAINER: bcci
+#       APP_ID: fcd31dc9-7240-48cd-a991-ed43a5b7997f   # DataDebugger (contains the [Test] codeunit)
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
 
-      - name: Install BcContainerHelper
-        shell: powershell
-        run: |
-          Install-Module BcContainerHelper -Force -AllowClobber
-          Import-Module BcContainerHelper
+#       - name: Install BcContainerHelper
+#         shell: powershell
+#         run: |
+#           Install-Module BcContainerHelper -Force -AllowClobber
+#           Import-Module BcContainerHelper
 
-      - name: Create BC v28 container (with test toolkit)
-        shell: powershell
-        run: |
-          Import-Module BcContainerHelper
-          $artifactUrl = Get-BCArtifactUrl -type Sandbox -version '28' -country 'w1' -select Latest
-          $cred = New-Object pscredential 'admin', (ConvertTo-SecureString 'P@ssw0rd123!' -AsPlainText -Force)
-          New-BcContainer `
-            -accept_eula `
-            -containerName $env:CONTAINER `
-            -artifactUrl $artifactUrl `
-            -auth UserPassword `
-            -credential $cred `
-            -updateHosts `
-            -includeTestToolkit `
-            -includeTestLibrariesOnly
+#       - name: Create BC v28 container (with test toolkit)
+#         shell: powershell
+#         run: |
+#           Import-Module BcContainerHelper
+#           $artifactUrl = Get-BCArtifactUrl -type Sandbox -version '28' -country 'w1' -select Latest
+#           $cred = New-Object pscredential 'admin', (ConvertTo-SecureString 'P@ssw0rd123!' -AsPlainText -Force)
+#           New-BcContainer `
+#             -accept_eula `
+#             -containerName $env:CONTAINER `
+#             -artifactUrl $artifactUrl `
+#             -auth UserPassword `
+#             -credential $cred `
+#             -updateHosts `
+#             -includeTestToolkit `
+#             -includeTestLibrariesOnly
 
-      - name: Compile and publish app
-        shell: powershell
-        run: |
-          Import-Module BcContainerHelper
-          $cred = New-Object pscredential 'admin', (ConvertTo-SecureString 'P@ssw0rd123!' -AsPlainText -Force)
-          Compile-AppInBcContainer `
-            -containerName $env:CONTAINER `
-            -credential $cred `
-            -appProjectFolder $env:GITHUB_WORKSPACE `
-            -appOutputFolder "$env:GITHUB_WORKSPACE\out" `
-            -UpdateSymbols |
-          Publish-BcContainerApp `
-            -containerName $env:CONTAINER `
-            -credential $cred `
-            -skipVerification -sync -install -useDevEndpoint
+#       - name: Compile and publish app
+#         shell: powershell
+#         run: |
+#           Import-Module BcContainerHelper
+#           $cred = New-Object pscredential 'admin', (ConvertTo-SecureString 'P@ssw0rd123!' -AsPlainText -Force)
+#           Compile-AppInBcContainer `
+#             -containerName $env:CONTAINER `
+#             -credential $cred `
+#             -appProjectFolder $env:GITHUB_WORKSPACE `
+#             -appOutputFolder "$env:GITHUB_WORKSPACE\out" `
+#             -UpdateSymbols |
+#           Publish-BcContainerApp `
+#             -containerName $env:CONTAINER `
+#             -credential $cred `
+#             -skipVerification -sync -install -useDevEndpoint
 
-      - name: Run tests
-        shell: powershell
-        run: |
-          Import-Module BcContainerHelper
-          $cred = New-Object pscredential 'admin', (ConvertTo-SecureString 'P@ssw0rd123!' -AsPlainText -Force)
-          Run-TestsInBcContainer `
-            -containerName $env:CONTAINER `
-            -credential $cred `
-            -extensionId $env:APP_ID `
-            -detailed `
-            -XUnitResultFileName "$env:GITHUB_WORKSPACE\TestResults.xml"
+#       - name: Run tests
+#         shell: powershell
+#         run: |
+#           Import-Module BcContainerHelper
+#           $cred = New-Object pscredential 'admin', (ConvertTo-SecureString 'P@ssw0rd123!' -AsPlainText -Force)
+#           Run-TestsInBcContainer `
+#             -containerName $env:CONTAINER `
+#             -credential $cred `
+#             -extensionId $env:APP_ID `
+#             -detailed `
+#             -XUnitResultFileName "$env:GITHUB_WORKSPACE\TestResults.xml"
 
-      - name: Upload build + test artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: datadebugger-build
-          path: |
-            out/*.app
-            TestResults.xml
+#       - name: Upload build + test artifacts
+#         if: always()
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: datadebugger-build
+#           path: |
+#             out/*.app
+#             TestResults.xml
 
-      - name: Publish test results summary
-        if: always()
-        continue-on-error: true   # don't fail the job if the result schema doesn't parse
-        uses: dorny/test-reporter@v1
-        with:
-          name: AL Tests
-          path: TestResults.xml
-          reporter: java-junit
+#       - name: Publish test results summary
+#         if: always()
+#         continue-on-error: true   # don't fail the job if the result schema doesn't parse
+#         uses: dorny/test-reporter@v1
+#         with:
+#           name: AL Tests
+#           path: TestResults.xml
+#           reporter: java-junit

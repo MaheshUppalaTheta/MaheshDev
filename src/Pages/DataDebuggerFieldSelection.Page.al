@@ -126,7 +126,7 @@ page 50111 "DD Field Selection"
                     FieldSel."Field Name" := Fld.FieldName;
                     FieldSel."Field Caption" := Fld."Field Caption";
                     FieldSel."Type Name" := Fld."Type Name";
-                    FieldSel.Selected := false;
+                    FieldSel.Selected := true; // default to capturing all fields; user unticks to exclude
                     FieldSel.Insert();
                 end;
             until Fld.Next() = 0;

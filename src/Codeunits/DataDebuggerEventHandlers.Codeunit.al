@@ -21,10 +21,17 @@ codeunit 50001 "Data Debugger Event Handlers"
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"Global Triggers", 'GetDatabaseTableTriggerSetup', '', false, false)]
     local procedure GetDatabaseTableTriggerSetup(TableId: Integer; var OnDatabaseInsert: Boolean; var OnDatabaseModify: Boolean; var OnDatabaseDelete: Boolean; var OnDatabaseRename: Boolean)
     begin
-        // Note: this is gated on table filters only, NOT on whether a recording is active. The
-        // platform caches the trigger setup per session, so gating on "is recording" would mean
-        // already-open sessions never raise triggers after a recording starts. The On* handlers
-        // below do the recording/user gating at runtime instead.
+        // Only enable the database triggers while a recording is active, so idle sessions pay no
+        // per-write trigger overhead when nothing is being recorded. IsActive() reads the cached
+        // recording state (refreshed at most once per second), so this stays cheap.
+        //
+        // CAVEAT: the platform caches this trigger setup per session. A session that was already
+        // open and idle when its setup was first evaluated may have cached "no triggers" and won't
+        // re-raise them until that cache refreshes — so a recording started afterwards might not be
+        // captured in that pre-existing session right away. To be safe, start the recording before
+        // the recorded user begins activity (or have them re-open their session).
+        if not SessionManager.IsActive() then
+            exit;
 
         if not FilterManager.IsTableAllowed(TableId) then
             exit;
