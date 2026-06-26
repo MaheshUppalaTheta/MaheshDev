@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | Event Intake | Codeunit 50001 `Data Debugger Event Handlers` | **Automatic** subscribers on the global database triggers (active in every session). Each event is gated by `Session Manager.ShouldCapture()` so only the recorded user's changes pass, then enforces capture guardrails (table filters, throttling, change thresholds) and serializes record snapshots. |
 | Filtering & Setup | Codeunit 50002 + Tables 50001/50002 | Centralized filter policy (table allow/deny, field projection, threshold checks, per-second limits) backed by `Data Debugger Setup` and `Table Filter` data. |
-| Context Enrichment | Codeunit 50003 `Context Manager` | Augments each change with user/session/company metadata, client type, rolling transaction IDs, call-stack text, and trigger source. |
+| Context Enrichment | Codeunit 50003 `Context Manager` | Augments each change with user/session/company metadata, client type, rolling transaction IDs, real AL call stack (`SessionInformation.Callstack()`, BC 26+), and a derived trigger source label (Database Insert/Modify/Delete/Rename). |
 | Session Orchestration | Codeunit 50000 `Session Manager` | Starts/stops runs, persists recording state (active flag, run id, recorded user) in `DD Recording State` (table 50007) so every session can read it, writes captures to the persisted `Change Buffer` (table 50000), exposes live stats, and launches downstream pages. |
 | Analytics | Codeunit 50004 `Analysis Engine` + table 50004 | Generates impact, performance, pattern/burst, relationship, and temporary-vs-real insights stored in the `Analysis Buffer`. |
 | UI & Visualization | Pages 50000-50009 (+ helper pages) | Card/List pages for recording control, live stats, results, advanced analysis, and context/transaction/table views. |
@@ -40,22 +40,48 @@
 ### Context-Rich Capture
 - User/session/company, client type, transaction IDs, and textual call-stack traces are persisted per entry, enabling forensic debugging and compliance-ready audit trails.
 
+### Call-Stack & Error Capture
+Data Debugger captures two distinct kinds of call stack, both stored in the `Call Stack` BLOB of `Change Buffer` (50000):
+
+**1. Live call stack (every change).** For every Insert/Modify/Delete/Rename, `Context Manager.CaptureCallStack()` records `SessionInformation.Callstack()` — the AL call stack at the moment of the database write — and derives a human-readable `Trigger Source` label (Database Insert/Modify/Delete/Rename) from it. This is the always-on path for normal operations.
+
+> **Frame trimming.** The raw stack always begins with Data Debugger's own capture frames (`CaptureCallStack` → `BuildEntry` → `AddChange` → `CaptureInsert`/etc. → `OnAfterOnGlobal*`) plus the platform's `Global Triggers … (Event)` dispatch frame, none of which describe where the operation actually originated. `RemoveDebuggerFrames()` strips this contiguous leading block so the **stored** stack starts at the real application code. Frames are matched by name (`Data Debugger` codeunits + the `Global Triggers (Event)` frame), so the trim survives renumbering of codeunits 50000/50001/50003. Order matters: `Trigger Source` is derived from the **full** stack *before* trimming (it keys off the very frames being removed), and a safety net returns the original stack if trimming would otherwise yield an empty result. The error-origin stack (path 2) contains no Data Debugger frames and is stored untrimmed.
+
+**2. Error origin call stack (when the recorded user's process fails).** When a runtime error occurs in the recorded session, Business Central writes an `Error Message` record (table 700) whose `Error Call Stack` field holds the *actual* AL stack where the error was raised. The global **Insert** subscriber (`CaptureInsert`) detects this table specifically and:
+- Reads the `Error Call Stack` BLOB straight from the `RecRef` buffer (`TempBlob.FromFieldRef`). It reads with `TextEncoding::Windows` and `Type Helper.ReadAsTextWithSeparator(..., LFSeparator())` to reconstruct the full **multi-line** stack — matching exactly how the platform's own `Error Message.SetErrorCallStack`/`GetErrorCallStack` store and read the field. (It does **not** call `ErrorMessage.GetErrorCallStack()`, because that method does a `CalcFields` that re-reads from the database by primary key, and the row is not yet queryable from inside the insert trigger.)
+- Logs the entry with **Change Type = `Error`** (enum value 4) instead of `Insert`.
+- Passes the decoded stack through `Session Manager.AddChange(... CallStackOverride)` so the persisted `Call Stack` reflects the error's true origin rather than the synthetic capture-path stack. If the field is empty, a marker string is stored instead — an `Error` entry deliberately never falls back to the live code-execution call stack.
+
+This means an `Error` row in the Results grid points at *where the failure came from*, not where Data Debugger intercepted it — the key value for diagnosing a failed process.
+
+> **⚠️ Limitation — interactive "collect all errors" posting is NOT captured.** BC's error-collection framework (`Codeunit "Error Message Management"`) accumulates posting/validation errors in **temporary** `Error Message` records and displays them all at once via `ShowErrors()`. Temporary-record inserts do **not** raise the global `OnDatabaseInsert` trigger, so this path is never seen by the subscriber. Error capture therefore only works for `Error Message` rows actually **persisted** to table 700 (e.g. job-queue error logging, Error Message Register persistence, batch flows via `CopyFromTemp`). Capturing the interactive collect-and-show path would require subscribing to the error-framework integration events (e.g. `OnLogError`) instead of, or in addition to, the DB trigger.
+
+**Interplay with Rollback-Safe Capture.** A raised error rolls back the database transaction, which would normally also discard the `Error Message` row and any captured changes. Because rollback-safe mode (the default) buffers captures in session memory on a SingleInstance codeunit — outside the database transaction — the `Error` entry and all preceding changes survive the rollback and are flushed on `Stop Recording`. `Start Recording` also calls `ClearLastError()` so errors are attributable to the current run. The `DD Test Error Runner` (codeunit 50141) exercises exactly this: it modifies a Customer, raises an error to force a rollback, and the test asserts the in-memory capture survived.
+
+> **Note:** Error capture rides on the **Insert** trigger of table 700, so it requires table 700 to pass the capture scope. In *Only Selected Tables* (whitelist) mode, add `Error Message` (700) to the Table Filters list to keep capturing error stacks.
+
+### Call-Stack Override Mechanism
+- **`AddChange` overloads:** `Session Manager` exposes three overloads of `AddChange`; the widest accepts a final `CallStackOverride: Text` argument.
+- **`BuildEntry` resolution:** when `CallStackOverride <> ''`, `BuildEntry` writes it verbatim to the `Call Stack` BLOB; otherwise it calls `Context Manager.CaptureCallStack()` to record the live `SessionInformation.Callstack()`.
+- **Used by error capture:** `CaptureInsert` is the only caller that supplies an override today (the decoded `Error Call Stack` from table 700, or a marker string when that field is empty). New callers wanting to attach a known stack can reuse the same overload.
+
 ## Configuration & Performance Notes
 - **Filter Manager:** Lazily loads setup, excludes known system and self tables by default, and enforces change-threshold counts (`Min Field Changes Required`) before logging modifications.
 - **Throttling:** Optional per-second capture cap prevents system overload; counters reset each second.
 - **Session Limits:** `Max Records Per Session` offers guardrails for long recordings.
-- **Storage:** Change and analysis buffers are temporary tables; payload BLOBs store JSON/call-stack text via streams to minimize database writes.
+- **Storage:** The Change Buffer is a persisted database table — captured data survives the session and a crash, and is cleared only at the start of the next recording (the Analysis Buffer remains temporary/in-memory). Payload BLOBs store JSON/call-stack text via streams.
 
 ## Setup Configuration Steps
 1. **Access Setup:** Open Data Debugger (page 50000) → click **Setup** → opens Setup Card (page 50004).
-2. **Table Filtering:**
-   - Enable → choose mode: **Include Only** (whitelist) or **Exclude Only** (blacklist).
+2. **Table Filtering (Capture Scope):**
+   - Set **Table Capture Scope** on the Setup card: **All Tables** (default), **Only Selected Tables** (whitelist), or **All Except Selected Tables** (blacklist).
    - Click **Table Filters** action → opens Table Filters List (page 50005).
-   - Add entries with Table ID, Filter Type (Include/Exclude), optional Field Filters (comma-separated), and Enabled flag.
-   - Use **Add Common System Tables** action to pre-populate exclusions (Change Log, Activity Log, etc.).
-3. **Field Filtering:**
-   - Enable → requires per-table field list in Table Filter records.
-   - Field Filters field accepts comma-separated field names; matching is case-insensitive with trimming.
+   - Add the tables that define the whitelist/blacklist: Table ID + Enabled. (The optional **Select Fields** action refines *which fields* are captured for a table — it does not affect whether the table itself is captured.)
+   - Use **Add Common System Tables** action to pre-populate the list with noisy system tables (useful with **All Except Selected Tables**).
+3. **Field Filtering (optional, per table):**
+   - No global toggle — it applies automatically to any Table Filter row that has fields selected.
+   - On the Table Filters page, use the **Select Fields** action to tick the fields to capture for the current row (checkbox list via `DD Field Selection`, page 50111, backed by the **persisted** table `DD Field Selection Buffer`, 50005, keyed by Table ID + Field No.). Edits save immediately and are retained across sessions; deleting a Table Filter row cascades to delete its stored field selections (unless another row still references the same Table ID).
+   - Semantics are simple: if any fields are selected, **only** those fields are captured for that table; if none are selected, all fields are captured. Field selection only has effect for tables that are actually captured (i.e. not for tables in an "All Except Selected Tables" exclusion list). Matching is case-insensitive with trimming.
 4. **Change Threshold:**
    - Enable → set Min Field Changes Required (default 1, range 1+).
    - ⚠️ **Known Issue:** Currently broken due to uninitialized `xRecRef` in event handler—disable until patched.
@@ -105,7 +131,7 @@
 ### Performance or Memory Pressure
 - **Symptoms:** UI lag, slow page refresh, high memory usage during recording.
 - **Solutions:**
-  1. Narrow table filters (use Include Only mode with specific tables).
+  1. Narrow the Capture Scope (use **Only Selected Tables** with a short list).
   2. Enable performance throttling (max captures per second).
   3. Run multiple shorter sessions instead of one long session.
   4. Use advanced analysis to detect bursts or heavy temp-table usage patterns.
@@ -137,9 +163,8 @@
 ### Enums
 | Enum | Object ID | Values | Purpose |
 | --- | --- | --- | --- |
-| `Data Debugger Change Type` | 50000 | Insert, Modify, Delete, Rename | Classifies database operation type. |
-| `DD Table Filter Mode` | 50001 | Include Only, Exclude Only | Determines setup page table filter behavior. |
-| `Data Debugger Filter Type` | 50002 | Include, Exclude | Per-table filter action in `Table Filter` records. |
+| `Data Debugger Change Type` | 50000 | Insert, Modify, Delete, Rename, **Error** | Classifies the captured entry. `Error` (value 4) marks an entry sourced from an `Error Message` (table 700) insert, whose `Call Stack` holds the error-origin stack. Marked `Extensible = false`. |
+| `DD Capture Scope` | 50005 | All Tables, Only Selected Tables, All Except Selected Tables | Single Setup control deciding how the Table Filters list is interpreted (capture all / whitelist / blacklist). |
 | `Data Debugger Analysis Type` | 50003 | Impact Analysis, Performance Metric, Pattern Detection, Relationship Mapping | Categorizes analysis buffer entries. |
 | `Data Debugger Severity` | 50004 | Info, Warning, Critical | Severity classification for analysis findings. |
 
@@ -147,14 +172,14 @@
 **Data Debugger Change Buffer (50000)**
 - **Primary Key:** Entry No. (auto-increment)
 - **Indexes:** RunTimestamp (Run ID + Timestamp), TableType (Run ID + Table ID + Change Type), Transaction (Run ID + Transaction ID + Timestamp), User (Run ID + User ID + Timestamp)
-- **BLOBs:** Old Data, New Data, Call Stack (use `Get*/Set*` methods for stream-based access)
+- **BLOBs:** Old Data, New Data, Call Stack (use `Get*/Set*` methods for stream-based access). For `Error`-type entries the `Call Stack` holds the error-origin stack copied from `Error Message`.`Error Call Stack`; for all other types it holds the live `SessionInformation.Callstack()`.
 - **Context Fields:** User ID, User Name, Company Name, Session ID, Transaction ID, Client Type, Trigger Source
 - **Metadata:** Table ID, Table Name, Change Type, Primary Key, Is Temporary Table, Record Count
 
 **Data Debugger Setup (50001)**
 - **Singleton:** Primary Key = '' (empty string)
-- **Table Filtering:** Enable Table Filtering (Boolean), Table Filter Mode (enum)
-- **Field Filtering:** Enable Field Filtering (Boolean)
+- **Table Filtering:** Table Capture Scope (enum `DD Capture Scope`: All Tables / Only Selected Tables / All Except Selected Tables; defaults to All Tables)
+- **Field Filtering:** no setup field — configured per row on Table Filters via the **Select Fields** action; applies whenever a row has fields selected (captures only those fields)
 - **Change Threshold:** Enable Change Threshold (Boolean), Min Field Changes Required (Integer, default 1)
 - **Performance:** Max Records Per Session (Integer, default 10000), Enable Performance Throttling (Boolean), Max Captures Per Second (Integer, default 100)
 - **Helper Method:** `GetSetup()` creates and returns singleton record with defaults
@@ -163,10 +188,10 @@
 - **Singleton:** Primary Key = '' (empty string); created on demand by `GetState()`.
 - **Purpose:** Holds cross-session recording state so the always-on capture handlers (which run in the recorded user's session) can read it.
 - **Fields:** `Is Recording` (Boolean), `Run ID` (Guid), `Recorded User Security ID` (Guid — the match key against `UserSecurityId()`), `Recorded User ID` (Code[50], login name for display), `Recorded User Name` (Text[80]), `Start Time` (DateTime).
-- **Written by:** Session Manager `StartRecording`/`StopRecording`. **Read by:** every session's capture path (cached ~1s).
+- **Written by:** Session Manager `StartRecording`/`StopRecording`. **Read by:** every session's capture path (cached ~1s via `EnsureCacheFresh`).
 
 **Data Debugger Table Filter (50002)**
-- **Fields:** Entry No., Table ID (with lookup to AllObjWithCaption), Table Name (auto-populated), Filter Type (enum), Field Filters (Text[2000] comma-separated), Enabled (Boolean)
+- **Fields:** Entry No., Table ID (lookup to AllObjWithCaption), Table Name (auto-populated), Enabled (Boolean). Table membership is defined by a row's presence + Enabled; the Setup **Capture Scope** decides whether the list is a whitelist or blacklist. Per-field capture selections live in the separate persisted table `DD Field Selection Buffer` (50005), and are cascade-deleted via this table's OnDelete trigger.
 - **Trigger Behavior:** OnInsert/OnModify automatically updates Table Name from metadata
 
 **Data Debugger Live Stats (50003)**
@@ -183,7 +208,7 @@
 | Page | Object ID | Type | Key Actions | Navigation Target |
 | --- | --- | --- | --- | --- |
 | Data Debugger | 50000 | Card | Record User (select), Start Recording, Stop Recording, Setup, Live Analysis, Refresh Stats | Main entry point; pick the user to record (User-table lookup, defaults to you), then start/stop; launches Setup (50004), Live Stats (50009) |
-| Data Debugger Results | 50001 | List | View Field Changes, View Call Stack, Group by Table, Group by Transaction, Export to Excel/JSON, Advanced Analysis, Clear Filters | Opens Field Changes (50002), Context Details (50006), Table Summary (50003), Transactions (50007), Advanced Analysis (50008) |
+| Data Debugger Results | 50001 | List | View Field Changes, View Call Stack, Group by Table, Group by Transaction, Export to Excel/JSON, Advanced Analysis, Clear Filters | Opens Field Changes (50002), Context Details (50006), Table Summary (50003), Transactions (50007), Advanced Analysis (50008). The **Table Filter** field has a drill-down (`DD Table Pick`, 50112, backed by `DD Table Pick Buffer`, 50006) listing the tables present in the results with operation counts; picking one filters the grid to that table by Table ID. The captured Call Stack contains the real AL stack via `SessionInformation.Callstack()`. |
 | Data Debugger Field Changes | 50002 | List | Show Only Changed Fields, Export to Excel, Copy to Clipboard | Parses Old/New JSON, displays field-by-field diff in Name/Value Buffer |
 | Data Debugger Table Summary | 50003 | List | View Table Changes | Aggregates changes by table, drills back to Results filtered by table |
 | Data Debugger Setup | 50004 | Card | Table Filters | Opens Table Filters (50005); edits Setup singleton |
@@ -192,6 +217,20 @@
 | Data Debugger Transactions | 50007 | List | View Transaction Changes | Groups changes by Transaction ID, drills into filtered Results |
 | DD Advanced Analysis | 50008 | List | Refresh Analysis, View Details, Export Analysis, Show Recommendations | Runs Analysis Engine, filters results, shows recommendations dialog |
 | Data Debugger Live Stats | 50009 | Card | Refresh, Detailed Analysis, View All Results | Auto-refresh stats, opens Advanced Analysis or Results from active session |
+
+## API Surface (External / MCP Integration)
+These OData v4 API objects expose the persisted capture data for external consumption (e.g. an MCP server that lets Claude analyse a recorded session). All are read-only and share publisher/group/version `theta/dataDebugger/v1.0`.
+
+| Object | ID | Entity Set | Purpose |
+| --- | --- | --- | --- |
+| `DD Change Entry API` (Page) | 50100 | `changeEntries` | One row per captured change. Surfaces all context fields plus the `oldData`, `newData`, and `callStack` BLOBs decoded to text. Supports OData `$filter` (e.g. by `runId`, `tableId`, `changeType`). |
+| `DD Recording Run API` (Query) | 50101 | `recordingRuns` | Summary grouped by `runId` with `changeCount`, `firstChange`, `lastChange` — lets a client discover sessions before drilling into entries. |
+
+**Typical MCP flow:** list `recordingRuns` → pick a `runId` → query `changeEntries?$filter=runId eq {guid}` → read the typed context + old/new JSON + call stack per change.
+
+**Base URL pattern:** `/api/theta/dataDebugger/v1.0/companies({id})/changeEntries`
+
+> Note: `changeEntries` reads the Change Buffer, which is cleared at the start of each new recording. Pull data after stopping (or during) a session, before the next run begins.
 
 ## Key Implementation Patterns
 ### Event Subscriber Architecture
@@ -202,7 +241,7 @@
 
 ### JSON Serialization Strategy
 - **RecordToJson()**: Iterates FieldRef, skips system fields/flowfields/BLOBs, formats by FieldType, applies field filtering before writing.
-- **Field Filtering**: `FilterManager.FilterFields()` mutates JsonObject per table filter rules before storage.
+- **Field Filtering**: `FilterManager.FilterFields()` reads the selected fields for the table from `DD Field Selection Buffer` (50005) and, if any are selected, keeps only those keys in the JsonObject before storage.
 - **Parsing**: Field Changes page uses `JsonObject.ReadFrom()` / `Get()` to reconstruct Name/Value pairs.
 
 ### Transaction Auto-Reset Logic
@@ -252,7 +291,7 @@
 
 ### Scenario 2: Exclude Custom Tables from Capture
 1. Open Data Debugger Setup → click Table Filters.
-2. Add row: Table ID = your table, Filter Type = Exclude, Enabled = Yes.
+2. Set **Table Capture Scope = All Except Selected Tables**, then add a row: Table ID = your table, Enabled = Yes.
 3. Alternatively, update `IsSystemTableExcluded()` in Filter Manager to hard-code exclusions.
 
 ### Scenario 3: Create Custom Results View

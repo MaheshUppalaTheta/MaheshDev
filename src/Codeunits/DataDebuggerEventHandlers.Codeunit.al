@@ -105,6 +105,7 @@ codeunit 50001 "Data Debugger Event Handlers"
     var
         ErrorMessage: Record "Error Message";
         TempBlob: Codeunit "Temp Blob";
+        TypeHelper: Codeunit "Type Helper";
         FldRef: FieldRef;
         InStream: InStream;
         NewDataJson: Text;
@@ -117,14 +118,24 @@ codeunit 50001 "Data Debugger Event Handlers"
         IsTemporary := IsTemporaryTable(RecRef);
 
         // When Table 700 "Error Message" is being inserted, read the "Error Call Stack" blob
-        // from the record and use it as our call stack. This gives us the actual error origin.
+        // from the record and use it as our call stack. This gives us the actual error origin
+        // rather than the synthetic capture-path stack.
         if RecRef.Number() = Database::"Error Message" then begin
             FldRef := RecRef.Field(ErrorMessage.FieldNo("Error Call Stack"));
+            // Read the BLOB straight from the RecRef buffer (the row is not yet queryable from the
+            // DB inside the insert trigger, so ErrorMessage.GetErrorCallStack()'s CalcFields would
+            // come back empty). Match the platform's own encoding (Windows/ANSI, set by
+            // SetErrorCallStack) and read every line — a call stack is multi-line, so a single
+            // InStream.ReadText would keep only the first line.
             TempBlob.FromFieldRef(FldRef);
             if TempBlob.HasValue() then begin
-                TempBlob.CreateInStream(InStream, TextEncoding::UTF8);
-                InStream.ReadText(ErrorCallStack);
+                TempBlob.CreateInStream(InStream);
+                ErrorCallStack := TypeHelper.ReadAsTextWithSeparator(InStream, TypeHelper.LFSeparator());
             end;
+            // For an Error entry the error-origin stack is the whole point, so never let it fall
+            // back to the code-execution call stack (which BuildEntry would do for an empty string).
+            if ErrorCallStack = '' then
+                ErrorCallStack := '(no error call stack recorded on the Error Message record)';
             SessionManager.AddChange(
                 RecRef.Number(),
                 "Data Debugger Change Type"::Error,
@@ -271,12 +282,7 @@ codeunit 50001 "Data Debugger Event Handlers"
         TableMetadata: Record "Table Metadata";
     begin
         // In Business Central, we can detect temporary tables by checking the TableType
-        if TableMetadata.Get(RecRef.Number()) then
-            exit(TableMetadata.TableType = TableMetadata.TableType::Temporary);
-
-        // If we can't find metadata, we can also try to detect based on RecordRef behavior
-        // Temporary tables typically have different characteristics
-        exit(false);
+        Exit(RecRef.IsTemporary());
     end;
 
 
