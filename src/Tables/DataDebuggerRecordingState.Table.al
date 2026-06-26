@@ -37,6 +37,12 @@ table 50007 "DD Recording State"
         {
             Caption = 'Start Time';
         }
+        field(8; "Rollback-Safe Capture"; Boolean)
+        {
+            Caption = 'Rollback-Safe Capture';
+            // Snapshot of the Setup toggle taken when the run started, so the recorded user's
+            // session can read it on the capture path via the cached state.
+        }
     }
 
     keys

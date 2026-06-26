@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "coverageData": [],
+  "testStatus": {
+    "50140|CapturesModifyForRecordedUser": 1,
+    "50140|CapturesInsertForRecordedUser": 1,
+    "50140|IgnoresChangesFromOtherUsers": 0,
+    "50140|CapturesNothingWhenNotRecording": 0,
+    "50140|NormalProcess_StopPersistsToRealTable": 1,
+    "50140|RollbackSafe_CapturesSurviveProcessError": 1,
+    "50140|ErrorThenStop_PersistsSurvivingCaptures": 1,
+    "50140|DirectMode_CapturesLostOnProcessError": 1
+  }
+}

@@ -3,6 +3,14 @@ codeunit 50000 "Data Debugger Session Manager"
     SingleInstance = true;
 
     var
+        // In-memory capture buffer used when "Rollback-Safe Capture" is on. Because this lives in
+        // session memory on a SingleInstance codeunit, it is NOT part of the database transaction,
+        // so a process error/rollback does not discard it. It is flushed to the persisted Change
+        // Buffer table on StopRecording.
+        TempChangeBuffer: Record "Data Debugger Change Buffer" temporary;
+        // AutoIncrement does not fire on temporary tables, so we assign Entry No. ourselves.
+        LastTempEntryNo: Integer;
+
         // Per-session cache of the recording state. Capture-path code (which can run in any
         // user's session on every database write) reads these instead of hitting the database
         // each time. The cache is refreshed at most once per second.
@@ -11,11 +19,13 @@ codeunit 50000 "Data Debugger Session Manager"
         CachedIsRecording: Boolean;
         CachedRunId: Guid;
         CachedRecUserSecId: Guid;
+        CachedRollbackSafe: Boolean;
 
     procedure StartRecording(RecUserSecurityId: Guid; RecUserId: Code[50]; RecUserName: Text): Guid
     var
         State: Record "DD Recording State";
         ChangeBuffer: Record "Data Debugger Change Buffer";
+        Setup: Record "Data Debugger Setup";
         ContextManager: Codeunit "Data Debugger Context Manager";
         FilterManager: Codeunit "Data Debugger Filter Manager";
         NewRunId: Guid;
@@ -25,10 +35,14 @@ codeunit 50000 "Data Debugger Session Manager"
 
         // Pick up any setup changes made since the client session started.
         FilterManager.ReloadSetup();
+        Setup := Setup.GetSetup();
 
-        // Clear any existing captured data from the previous run.
+        // Clear any existing captured data from the previous run (both stores).
         ChangeBuffer.Reset();
         ChangeBuffer.DeleteAll();
+        TempChangeBuffer.Reset();
+        TempChangeBuffer.DeleteAll();
+        LastTempEntryNo := 0;
 
         NewRunId := CreateGuid();
 
@@ -39,10 +53,16 @@ codeunit 50000 "Data Debugger Session Manager"
         State."Recorded User ID" := RecUserId;
         State."Recorded User Name" := CopyStr(RecUserName, 1, MaxStrLen(State."Recorded User Name"));
         State."Start Time" := CurrentDateTime();
+        // Snapshot the capture mode for the run so the recorded user's session reads a stable value.
+        // Rollback-safe is the default; only the explicit "Direct Database Capture" opt-in disables it.
+        State."Rollback-Safe Capture" := not Setup."Direct Database Capture";
         State.Modify();
 
         // Start a fresh transaction context for the recording session.
         ContextManager.StartNewTransaction();
+
+        // Clear any previous error state so we can detect errors that occur during this recording.
+        ClearLastError();
 
         InvalidateCache();
 
@@ -67,6 +87,13 @@ codeunit 50000 "Data Debugger Session Manager"
 
         RunId := State."Run ID";
         StartTime := State."Start Time";
+
+        // If we captured in memory, persist it now (after the recorded process has finished, so a
+        // mid-process rollback could not have discarded it). Commit so the flushed rows survive.
+        if State."Rollback-Safe Capture" then begin
+            FlushTempToReal();
+            Commit();
+        end;
 
         State."Is Recording" := false;
         State.Modify();
@@ -124,47 +151,123 @@ codeunit 50000 "Data Debugger Session Manager"
     end;
 
     procedure AddChange(TableId: Integer; ChangeType: Enum "Data Debugger Change Type"; PrimaryKey: Text; OldDataJson: Text; NewDataJson: Text; IsTemporaryTable: Boolean)
+    begin
+        AddChange(TableId, ChangeType, PrimaryKey, OldDataJson, NewDataJson, IsTemporaryTable, '');
+    end;
+
+    procedure AddChange(TableId: Integer; ChangeType: Enum "Data Debugger Change Type"; PrimaryKey: Text; OldDataJson: Text; NewDataJson: Text; IsTemporaryTable: Boolean; CallStackOverride: Text)
     var
         ChangeBuffer: Record "Data Debugger Change Buffer";
-        TableMetadata: Record "Table Metadata";
-        ContextManager: Codeunit "Data Debugger Context Manager";
     begin
         EnsureCacheFresh();
         if not CachedIsRecording then
             exit;
 
-        ChangeBuffer.Init();
-        // "Entry No." is AutoIncrement - let the platform assign it.
-        ChangeBuffer."Run ID" := CachedRunId;
-        ChangeBuffer.Timestamp1 := CurrentDateTime();
-        ChangeBuffer."Table ID" := TableId;
-        ChangeBuffer."Change Type" := ChangeType;
-        ChangeBuffer."Primary Key" := CopyStr(PrimaryKey, 1, MaxStrLen(ChangeBuffer."Primary Key"));
-        ChangeBuffer."Is Temporary Table" := IsTemporaryTable;
+        // Build the entry in a (non-temporary) record buffer first, so the context helpers always
+        // operate on the same record type regardless of where the entry is ultimately stored.
+        BuildEntry(ChangeBuffer, TableId, ChangeType, PrimaryKey, OldDataJson, NewDataJson, IsTemporaryTable, CallStackOverride);
+
+        if CachedRollbackSafe then begin
+            // Rollback-safe: copy into the in-memory buffer so a process error/rollback cannot
+            // discard it. The record assignment carries the in-memory BLOB values.
+            LastTempEntryNo += 1;
+            TempChangeBuffer := ChangeBuffer;
+            TempChangeBuffer."Entry No." := LastTempEntryNo; // AutoIncrement does not fire on temp tables
+            TempChangeBuffer.Insert();
+        end else
+            // Direct mode: write straight to the persisted table (supports recording another user,
+            // but the rows roll back if the recorded process errors).
+            ChangeBuffer.Insert(); // "Entry No." AutoIncrement is assigned by the platform
+    end;
+
+
+
+    local procedure BuildEntry(var Buf: Record "Data Debugger Change Buffer"; TableId: Integer; ChangeType: Enum "Data Debugger Change Type"; PrimaryKey: Text; OldDataJson: Text; NewDataJson: Text; IsTemporaryTable: Boolean; CallStackOverride: Text)
+    var
+        TableMetadata: Record "Table Metadata";
+        ContextManager: Codeunit "Data Debugger Context Manager";
+    begin
+        Buf.Init();
+        Buf."Run ID" := CachedRunId;
+        Buf.Timestamp1 := CurrentDateTime();
+        Buf."Table ID" := TableId;
+        Buf."Change Type" := ChangeType;
+        Buf."Primary Key" := CopyStr(PrimaryKey, 1, MaxStrLen(Buf."Primary Key"));
+        Buf."Is Temporary Table" := IsTemporaryTable;
 
         // Get table name with temporary indicator
         if TableMetadata.Get(TableId) then begin
             if IsTemporaryTable then
-                ChangeBuffer."Table Name" := TableMetadata.Name + ' (Temp)'
+                Buf."Table Name" := TableMetadata.Name + ' (Temp)'
             else
-                ChangeBuffer."Table Name" := TableMetadata.Name;
+                Buf."Table Name" := TableMetadata.Name;
         end else begin
             if IsTemporaryTable then
-                ChangeBuffer."Table Name" := Format(TableId) + ' (Temp)'
+                Buf."Table Name" := Format(TableId) + ' (Temp)'
             else
-                ChangeBuffer."Table Name" := Format(TableId);
+                Buf."Table Name" := Format(TableId);
         end;
 
-        ChangeBuffer.SetOldData(OldDataJson);
-        ChangeBuffer.SetNewData(NewDataJson);
+        Buf.SetOldData(OldDataJson);
+        Buf.SetNewData(NewDataJson);
 
         // Capture enhanced context information. These run in the recorded user's own session,
         // so the user/session/call-stack context reflects that user.
-        ContextManager.CaptureUserContext(ChangeBuffer);
-        ContextManager.CaptureTransactionContext(ChangeBuffer);
-        ContextManager.CaptureCallStack(ChangeBuffer);
+        ContextManager.CaptureUserContext(Buf);
+        ContextManager.CaptureTransactionContext(Buf);
 
-        ChangeBuffer.Insert();
+        // Use the call stack from the source record (e.g., Error Message table) if provided,
+        // otherwise capture the current call stack.
+        if CallStackOverride <> '' then
+            Buf.SetCallStack(CallStackOverride)
+        else
+            ContextManager.CaptureCallStack(Buf);
+    end;
+
+    local procedure FlushTempToReal()
+    var
+        RealBuffer: Record "Data Debugger Change Buffer";
+        NextEntryNo: Integer;
+    begin
+        // Move the in-memory capture into the persisted table, preserving capture order. BLOBs are
+        // transferred via the table's stream helpers so their content copies reliably.
+        TempChangeBuffer.Reset();
+        TempChangeBuffer.SetCurrentKey("Entry No.");
+        if not TempChangeBuffer.FindSet() then
+            exit;
+
+        // Assign Entry No. explicitly (max existing + 1) instead of relying on AutoIncrement: the
+        // table's identity seed can drift behind the data, which would otherwise cause a duplicate
+        // "Entry No." collision here. This is safe whether the table is empty or still has rows.
+        if RealBuffer.FindLast() then
+            NextEntryNo := RealBuffer."Entry No." + 1
+        else
+            NextEntryNo := 1;
+
+        repeat
+            RealBuffer.Init();
+            RealBuffer."Entry No." := NextEntryNo;
+            NextEntryNo += 1;
+            RealBuffer."Run ID" := TempChangeBuffer."Run ID";
+            RealBuffer.Timestamp1 := TempChangeBuffer.Timestamp1;
+            RealBuffer."Table ID" := TempChangeBuffer."Table ID";
+            RealBuffer."Table Name" := TempChangeBuffer."Table Name";
+            RealBuffer."Change Type" := TempChangeBuffer."Change Type";
+            RealBuffer."Primary Key" := TempChangeBuffer."Primary Key";
+            RealBuffer."Record Count" := TempChangeBuffer."Record Count";
+            RealBuffer."User ID" := TempChangeBuffer."User ID";
+            RealBuffer."User Name" := TempChangeBuffer."User Name";
+            RealBuffer."Company Name" := TempChangeBuffer."Company Name";
+            RealBuffer."Session ID" := TempChangeBuffer."Session ID";
+            RealBuffer."Transaction ID" := TempChangeBuffer."Transaction ID";
+            RealBuffer."Trigger Source" := TempChangeBuffer."Trigger Source";
+            RealBuffer."Client Type" := TempChangeBuffer."Client Type";
+            RealBuffer."Is Temporary Table" := TempChangeBuffer."Is Temporary Table";
+            RealBuffer.SetOldData(TempChangeBuffer.GetOldData());
+            RealBuffer.SetNewData(TempChangeBuffer.GetNewData());
+            RealBuffer.SetCallStack(TempChangeBuffer.GetCallStack());
+            RealBuffer.Insert(); // "Entry No." assigned explicitly above
+        until TempChangeBuffer.Next() = 0;
     end;
 
     /// <summary>
@@ -180,6 +283,10 @@ codeunit 50000 "Data Debugger Session Manager"
 
         ChangeBuffer.Reset();
         ChangeBuffer.DeleteAll();
+
+        TempChangeBuffer.Reset();
+        TempChangeBuffer.DeleteAll();
+        LastTempEntryNo := 0;
     end;
 
     local procedure GetTotalChangeCount(RunId: Guid): Integer
@@ -197,6 +304,19 @@ codeunit 50000 "Data Debugger Session Manager"
     begin
         TempBuffer.Reset();
         TempBuffer.DeleteAll();
+
+        EnsureCacheFresh();
+        // While a rollback-safe run is active the captures live only in memory (not yet flushed),
+        // so read them from there; otherwise read the persisted table for this run.
+        if CachedIsRecording and CachedRollbackSafe then begin
+            TempChangeBuffer.Reset();
+            if TempChangeBuffer.FindSet() then
+                repeat
+                    TempBuffer := TempChangeBuffer;
+                    TempBuffer.Insert();
+                until TempChangeBuffer.Next() = 0;
+            exit;
+        end;
 
         State := State.GetState();
         ChangeBuffer.SetRange("Run ID", State."Run ID");
@@ -224,12 +344,23 @@ codeunit 50000 "Data Debugger Session Manager"
 
         State := State.GetState();
         if State."Is Recording" and (State."Start Time" <> 0DT) then begin
-            ChangeBuffer.SetCurrentKey("Run ID", Timestamp1);
-            ChangeBuffer.SetRange("Run ID", State."Run ID");
-            TotalChanges := ChangeBuffer.Count();
-            if ChangeBuffer.FindLast() then begin
-                LastCaptureTime := ChangeBuffer.Timestamp1;
-                LastCaptureTable := ChangeBuffer."Table Name";
+            if State."Rollback-Safe Capture" then begin
+                // Captures are still in memory during the run.
+                TempChangeBuffer.Reset();
+                TotalChanges := TempChangeBuffer.Count();
+                TempChangeBuffer.SetCurrentKey("Entry No.");
+                if TempChangeBuffer.FindLast() then begin
+                    LastCaptureTime := TempChangeBuffer.Timestamp1;
+                    LastCaptureTable := TempChangeBuffer."Table Name";
+                end;
+            end else begin
+                ChangeBuffer.SetCurrentKey("Run ID", Timestamp1);
+                ChangeBuffer.SetRange("Run ID", State."Run ID");
+                TotalChanges := ChangeBuffer.Count();
+                if ChangeBuffer.FindLast() then begin
+                    LastCaptureTime := ChangeBuffer.Timestamp1;
+                    LastCaptureTable := ChangeBuffer."Table Name";
+                end;
             end;
 
             Duration := CurrentDateTime() - State."Start Time";
@@ -306,10 +437,12 @@ codeunit 50000 "Data Debugger Session Manager"
             CachedIsRecording := State."Is Recording";
             CachedRunId := State."Run ID";
             CachedRecUserSecId := State."Recorded User Security ID";
+            CachedRollbackSafe := State."Rollback-Safe Capture";
         end else begin
             CachedIsRecording := false;
             Clear(CachedRunId);
             Clear(CachedRecUserSecId);
+            CachedRollbackSafe := false;
         end;
         CacheValid := true;
         CacheTime := CurrentDateTime();

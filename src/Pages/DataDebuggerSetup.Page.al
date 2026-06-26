@@ -35,6 +35,12 @@ page 50004 "Data Debugger Setup"
                         end;
                     end;
                 }
+
+                field("Direct Database Capture"; Rec."Direct Database Capture")
+                {
+                    ApplicationArea = All;
+                    ToolTip = 'Off (default): changes are buffered in memory and survive a process error/rollback; results are written when you Stop Recording (records your OWN current session). On: changes are written directly to the table (supports recording another user) but roll back if the recorded process errors.';
+                }
             }
 
             group(ChangeThreshold)

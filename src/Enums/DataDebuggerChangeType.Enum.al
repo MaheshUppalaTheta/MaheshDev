@@ -18,4 +18,8 @@ enum 50000 "Data Debugger Change Type"
     {
         Caption = 'Rename';
     }
+    value(4; Error)
+    {
+        Caption = 'Error';
+    }
 }

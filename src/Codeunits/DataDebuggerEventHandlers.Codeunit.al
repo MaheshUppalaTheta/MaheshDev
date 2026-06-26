@@ -21,18 +21,11 @@ codeunit 50001 "Data Debugger Event Handlers"
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"Global Triggers", 'GetDatabaseTableTriggerSetup', '', false, false)]
     local procedure GetDatabaseTableTriggerSetup(TableId: Integer; var OnDatabaseInsert: Boolean; var OnDatabaseModify: Boolean; var OnDatabaseDelete: Boolean; var OnDatabaseRename: Boolean)
     begin
-        // Only enable the database triggers while a recording is active, so idle sessions pay no
-        // per-write trigger overhead when nothing is being recorded. IsActive() reads the cached
-        // recording state (refreshed at most once per second), so this stays cheap.
-        //
-        // CAVEAT: the platform caches this trigger setup per session. A session that was already
-        // open and idle when its setup was first evaluated may have cached "no triggers" and won't
-        // re-raise them until that cache refreshes — so a recording started afterwards might not be
-        // captured in that pre-existing session right away. To be safe, start the recording before
-        // the recorded user begins activity (or have them re-open their session).
-        if not SessionManager.IsActive() then
-            exit;
-
+        // Gated on table filters ONLY, NOT on whether a recording is active. The platform caches
+        // this trigger setup per session, so gating on "is recording" would mean a session that was
+        // already open when the setup was first evaluated caches "no triggers" and never raises them
+        // after a recording later starts — which silently breaks capture. The On* handlers below do
+        // the recording/user gating at runtime via ShouldCapture() instead, which is always correct.
         if not FilterManager.IsTableAllowed(TableId) then
             exit;
 
@@ -106,24 +99,50 @@ codeunit 50001 "Data Debugger Event Handlers"
         CaptureRename(RecRef, xRecRef);
     end;
 
+
+
     local procedure CaptureInsert(RecRef: RecordRef)
     var
+        ErrorMessage: Record "Error Message";
+        TempBlob: Codeunit "Temp Blob";
+        FldRef: FieldRef;
+        InStream: InStream;
         NewDataJson: Text;
         PrimaryKey: Text;
+        ErrorCallStack: Text;
         IsTemporary: Boolean;
     begin
         NewDataJson := RecordToJson(RecRef);
         PrimaryKey := GetPrimaryKeyText(RecRef);
         IsTemporary := IsTemporaryTable(RecRef);
 
-        SessionManager.AddChange(
-            RecRef.Number(),
-            "Data Debugger Change Type"::Insert,
-            PrimaryKey,
-            '', // No old data for insert
-            NewDataJson,
-            IsTemporary
-        );
+        // When Table 700 "Error Message" is being inserted, read the "Error Call Stack" blob
+        // from the record and use it as our call stack. This gives us the actual error origin.
+        if RecRef.Number() = Database::"Error Message" then begin
+            FldRef := RecRef.Field(ErrorMessage.FieldNo("Error Call Stack"));
+            TempBlob.FromFieldRef(FldRef);
+            if TempBlob.HasValue() then begin
+                TempBlob.CreateInStream(InStream, TextEncoding::UTF8);
+                InStream.ReadText(ErrorCallStack);
+            end;
+            SessionManager.AddChange(
+                RecRef.Number(),
+                "Data Debugger Change Type"::Error,
+                PrimaryKey,
+                '',
+                NewDataJson,
+                IsTemporary,
+                ErrorCallStack
+            );
+        end else
+            SessionManager.AddChange(
+                RecRef.Number(),
+                "Data Debugger Change Type"::Insert,
+                PrimaryKey,
+                '', // No old data for insert
+                NewDataJson,
+                IsTemporary
+            );
     end;
 
     local procedure CaptureModify(RecRef: RecordRef; xRecRef: RecordRef)
@@ -259,4 +278,6 @@ codeunit 50001 "Data Debugger Event Handlers"
         // Temporary tables typically have different characteristics
         exit(false);
     end;
+
+
 }
