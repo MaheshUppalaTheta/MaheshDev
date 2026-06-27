@@ -146,12 +146,9 @@ codeunit 50002 "Data Debugger Filter Manager"
 
     local procedure IsSystemTableExcluded(TableId: Integer): Boolean
     var
-        ExcludedTables: array[15] of Integer;
+        ExcludedTables: array[10] of Integer;
         i: Integer;
     begin
-        // Exclude system tables (TableId < 50000 for custom objects)
-        // if TableId < 50000 then
-        //     exit(true);
 
         // Initialize array with specific change log and system table IDs
         ExcludedTables[1] := Database::"Change Log Entry";
@@ -171,6 +168,9 @@ codeunit 50002 "Data Debugger Filter Manager"
         ExcludedTables[13] := Database::"Data Debugger Table Filter";
         ExcludedTables[14] := Database::"Data Debugger Live Stats";
         ExcludedTables[15] := Database::"Data Debugger Analysis Buffer";
+        ExcludedTables[16] := Database::"DD Field Selection Buffer";
+        ExcludedTables[17] := Database::"DD Recording State";
+        ExcludedTables[18] := Database::"DD Table Pick Buffer";
 
         // Check if the table is in the excluded list
         for i := 1 to ArrayLen(ExcludedTables) do begin

@@ -88,6 +88,12 @@ codeunit 50000 "Data Debugger Session Manager"
         RunId := State."Run ID";
         StartTime := State."Start Time";
 
+        // If the recorded process raised a (trapped) runtime error during this run, log it as a
+        // final Error entry. Done before the flush and before flipping "Is Recording" off, so the
+        // entry is included in the rollback-safe flush. ClearLastError() at StartRecording scopes
+        // this to the current run.
+        CaptureLastSessionError();
+
         // If we captured in memory, persist it now (after the recorded process has finished, so a
         // mid-process rollback could not have discarded it). Commit so the flushed rows survive.
         if State."Rollback-Safe Capture" then begin
@@ -108,6 +114,31 @@ codeunit 50000 "Data Debugger Session Manager"
         // GetChanges(TempBuffer);
         // DataDebuggerResults.SetData(TempBuffer, RunId, StartTime);
         // DataDebuggerResults.RunModal();
+    end;
+
+    local procedure CaptureLastSessionError()
+    var
+        JsonObj: JsonObject;
+        ErrorText: Text;
+        ErrorCallStack: Text;
+        NewDataJson: Text;
+    begin
+        // GetLastErrorText/GetLastErrorCallStack reflect the last (trapped) error in this session.
+        // StartRecording cleared them, so a non-empty value here belongs to the current run.
+        ErrorText := GetLastErrorText();
+        if ErrorText = '' then
+            exit;
+
+        ErrorCallStack := GetLastErrorCallStack();
+        if ErrorCallStack = '' then
+            ErrorCallStack := '(no error call stack available)';
+
+        JsonObj.Add('ErrorMessage', ErrorText);
+        JsonObj.WriteTo(NewDataJson);
+
+        // Table 0 → "Session Runtime Error" (see BuildEntry). The error-origin call stack is passed
+        // as the override so it is stored verbatim, not the synthetic capture-path stack.
+        AddChange(0, "Data Debugger Change Type"::Error, ErrorText, '', NewDataJson, false, ErrorCallStack);
     end;
 
     procedure IsActive(): Boolean
@@ -201,7 +232,10 @@ codeunit 50000 "Data Debugger Session Manager"
                 Buf."Table Name" := TableMetadata.Name + ' (Temp)'
             else
                 Buf."Table Name" := TableMetadata.Name;
-        end else begin
+        end else if TableId = 0 then
+                // Synthetic entry: a session-level runtime error captured at Stop Recording, not a row change.
+                Buf."Table Name" := 'Session Runtime Error'
+        else begin
             if IsTemporaryTable then
                 Buf."Table Name" := Format(TableId) + ' (Temp)'
             else
