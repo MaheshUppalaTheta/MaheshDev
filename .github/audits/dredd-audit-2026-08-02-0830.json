@@ -1,0 +1,329 @@
+{
+  "skill": { "id": "dredd", "version": 1 },
+  "outcome": "completed",
+  "audit": {
+    "target": "codebase",
+    "verdict": "FAIL",
+    "gate": "advisory",
+    "bcquality": {
+      "submodule-sha": null,
+      "outcome": "active",
+      "skills-run": [
+        "al-code-review",
+        "al-performance-review",
+        "al-privacy-review",
+        "al-security-review",
+        "al-style-review",
+        "al-data-modeling-review",
+        "al-appsource-review",
+        "al-testing-review"
+      ],
+      "notes": "BCQuality · active, bundled assets (theframework.acdc extension). SHA not pinned (aldc.yaml absent). BCQuality · 9 cited findings."
+    },
+    "coverage": {
+      "objects-total": 49,
+      "objects-audited": 49
+    },
+    "notes": "Full-codebase audit requested. 49 AL files enumerated across src/, Temp/, Tests/, API/, Agent/, root. 1 blocker (active demo subscriber compiled into production), 6 major (privacy, correctness). Advisory FAIL."
+  },
+  "summary": {
+    "counts": {
+      "blocker": 1,
+      "major": 6,
+      "minor": 11,
+      "info": 4
+    },
+    "coverage": {
+      "worklist-size": 49,
+      "items-evaluated": 49
+    }
+  },
+  "findings": [
+    {
+      "id": "agent:demo-bad-extension-active-in-production",
+      "source": "agent",
+      "domain": "security",
+      "severity": "blocker",
+      "message": "src/Temp/DemoBadExtension.al contains a live (uncommented) EventSubscriber on Codeunit::Sales-Post 'OnBeforePostSalesDoc' that applies a 15 % discount to every sales line on every posting. The file sits inside the AL project folder with no exclusion, is compiled into the .app, and will silently corrupt invoice amounts for all companies using the extension. The subscriber is not guarded by any feature flag or disabled state.",
+      "location": { "file": "src/Temp/DemoBadExtension.al", "line": 2, "range": "1-22" },
+      "references": [],
+      "confidence": "high",
+      "from-sub-skill": "agent",
+      "fix-hint": "Comment out or delete the subscriber body immediately, or remove the file from the AL project. If needed for demonstration purposes, keep it outside the src/ folder tree (it must not be compiled into the shipping .app).",
+      "suggested-code": "// File src/Temp/DemoBadExtension.al — disable the subscriber body:\n// codeunit 50050 \"Demo Bad Extension\"\n// {\n//     [EventSubscriber(...)]\n//     local procedure OnBeforePostSalesDoc(...)\n//     begin\n//         // DISABLED — do not apply automatic discounts in production\n//     end;\n// }",
+      "suggested-code-omission-reason": null
+    },
+    {
+      "id": "microsoft/knowledge/privacy/data-classification-required-on-pii-fields.md",
+      "source": "bcquality",
+      "domain": "privacy",
+      "severity": "major",
+      "message": "Table 50000 'Data Debugger Change Buffer' is declared DataClassification = SystemMetadata at table level. This classification cascades to every field that does not override it. The table stores: 'Old Data' and 'New Data' BLOBs containing serialised customer record content (CustomerContent); 'Call Stack' BLOB which may contain customer identifiers embedded in error messages (CustomerContent); 'User ID' Code[50] (EndUserPseudonymousIdentifiers); 'User Name' Text[80] (EndUserIdentifiableInformation); 'Company Name' Text[30] (OrganizationIdentifiableInformation). All these fields carry the wrong classification, which violates BC privacy rules and misrepresents the data to the platform's privacy tools.",
+      "location": { "file": "src/Tables/DataDebuggerChangeBuffer.Table.al", "line": 4, "range": "1-6" },
+      "references": [
+        { "path": "microsoft/knowledge/privacy/data-classification-required-on-pii-fields.md", "sha": null }
+      ],
+      "confidence": "high",
+      "from-sub-skill": "al-privacy-review",
+      "fix-hint": "Override DataClassification at field level for every sensitive field. Remove the table-level DataClassification declaration (or keep it at SystemMetadata only for truly system fields) and add per-field overrides.",
+      "suggested-code": "field(8; \"Old Data\"; Blob)\n{\n    Caption = 'Old Data';\n    DataClassification = CustomerContent;\n}\nfield(9; \"New Data\"; Blob)\n{\n    Caption = 'New Data';\n    DataClassification = CustomerContent;\n}\nfield(11; \"User ID\"; Code[50])\n{\n    Caption = 'User ID';\n    DataClassification = EndUserPseudonymousIdentifiers;\n}\nfield(12; \"User Name\"; Text[80])\n{\n    Caption = 'User Name';\n    DataClassification = EndUserIdentifiableInformation;\n}\nfield(16; \"Call Stack\"; Blob)\n{\n    Caption = 'Call Stack';\n    DataClassification = CustomerContent;\n}",
+      "suggested-code-omission-reason": null
+    },
+    {
+      "id": "microsoft/knowledge/privacy/data-classification-required-on-pii-fields.md",
+      "source": "bcquality",
+      "domain": "privacy",
+      "severity": "major",
+      "message": "Table 50007 'DD Recording State' is declared DataClassification = SystemMetadata at table level. It stores: 'Recorded User Security ID' Guid (EndUserPseudonymousIdentifiers); 'Recorded User ID' Code[50] (EndUserPseudonymousIdentifiers); 'Recorded User Name' Text[80] (EndUserIdentifiableInformation). All three fields are misclassified.",
+      "location": { "file": "src/Tables/DataDebuggerRecordingState.Table.al", "line": 4, "range": "1-6" },
+      "references": [
+        { "path": "microsoft/knowledge/privacy/data-classification-required-on-pii-fields.md", "sha": null }
+      ],
+      "confidence": "high",
+      "from-sub-skill": "al-privacy-review",
+      "fix-hint": "Add field-level DataClassification overrides for fields 4, 5, and 6.",
+      "suggested-code": "field(4; \"Recorded User Security ID\"; Guid)\n{\n    Caption = 'Recorded User Security ID';\n    DataClassification = EndUserPseudonymousIdentifiers;\n}\nfield(5; \"Recorded User ID\"; Code[50])\n{\n    Caption = 'Recorded User ID';\n    DataClassification = EndUserPseudonymousIdentifiers;\n}\nfield(6; \"Recorded User Name\"; Text[80])\n{\n    Caption = 'Recorded User Name';\n    DataClassification = EndUserIdentifiableInformation;\n}",
+      "suggested-code-omission-reason": null
+    },
+    {
+      "id": "microsoft/knowledge/privacy/getlasterrortext-customer-content-in-errors.md",
+      "source": "bcquality",
+      "domain": "privacy",
+      "severity": "major",
+      "message": "CaptureLastSessionError() calls GetLastErrorText() and persists the full error string verbatim to the Change Buffer via AddChange(). GetLastErrorText() may contain customer business data embedded in AL error messages (e.g. document numbers, amounts, customer names surfaced by Error() calls in app code). The receiving 'New Data' BLOB field is misclassified SystemMetadata (see separate DataClassification finding). Even after reclassification, the approach of blindly persisting GetLastErrorText() without sanitisation or a documented data-retention decision is risky.",
+      "location": { "file": "src/Codeunits/DataDebuggerSessionManager.Codeunit.al", "line": 109, "range": "104-130" },
+      "references": [
+        { "path": "microsoft/knowledge/privacy/getlasterrortext-customer-content-in-errors.md", "sha": null }
+      ],
+      "confidence": "high",
+      "from-sub-skill": "al-privacy-review",
+      "fix-hint": "Store the error text under a field classified CustomerContent. Document the retention policy for captured error text. Consider whether only the error category/code (not the full message) is needed for the diagnosis use case."
+    },
+    {
+      "id": "agent:getclienttype-always-returns-client",
+      "source": "agent",
+      "domain": "correctness",
+      "severity": "major",
+      "message": "GetClientType() in DataDebuggerContextManager.Codeunit.al builds a case-true block comparing SessionId() to 0 and > 0. SessionId() always returns a positive integer for any running session; the '= 0' branch is unreachable, so the method unconditionally returns 'Client' for every session including NAS and background task sessions. The 'Unknown' branch is dead. The change buffer's 'Client Type' field will therefore contain incorrect metadata for every captured entry.",
+      "location": { "file": "src/Codeunits/DataDebuggerContextManager.Codeunit.al", "line": 68, "range": "68-78" },
+      "references": [],
+      "confidence": "high",
+      "from-sub-skill": "agent",
+      "fix-hint": "Replace the procedure body with a call to CurrentClientType() and format the result.",
+      "suggested-code": "local procedure GetClientType(): Text\nbegin\n    exit(Format(CurrentClientType()));\nend;",
+      "suggested-code-omission-reason": null
+    },
+    {
+      "id": "agent:isreadable-unused-permission-check-bypassed",
+      "source": "agent",
+      "domain": "correctness",
+      "severity": "major",
+      "message": "In OnAfterOnGlobalModify (DataDebuggerEventHandlers), the variable IsReadable is set to true inside the ReadPermission() guard but is never read afterwards. If xRecRef.ReadPermission() returns false, IsReadable stays false and the code falls straight through to CaptureModify(RecRef, xRecRef). At that point xRecRef is opened but has had no Get() call, so RecordToJson(xRecRef) produces an empty JSON object '{}' — the Old Data for every table where the event handler lacks read permission will be silently missing. The read-permission guard achieves nothing.",
+      "location": { "file": "src/Codeunits/DataDebuggerEventHandlers.Codeunit.al", "line": 55, "range": "50-80" },
+      "references": [],
+      "confidence": "high",
+      "from-sub-skill": "agent",
+      "fix-hint": "Remove the IsReadable variable. Either guard CaptureModify on the ReadPermission result (exit early if false), or explicitly document that captures with no read permission produce empty old data. Ensure the fix is consistent with the stated design goal.",
+      "suggested-code": "xRecRef.Open(RecRef.Number, false, RecRef.CurrentCompany());\nxRecRef.ReadIsolation := xRecRef.ReadIsolation::ReadCommitted;\nxRecRef.\"SecurityFiltering\" := SECURITYFILTER::Filtered;\nif xRecRef.ReadPermission() then begin\n    if not xRecRef.Get(RecRef.RecordId) then\n        exit;\nend;\n\nCaptureModify(RecRef, xRecRef);",
+      "suggested-code-omission-reason": null
+    },
+    {
+      "id": "agent:nested-findset-same-variable-transactions",
+      "source": "agent",
+      "domain": "correctness",
+      "severity": "major",
+      "message": "DataDebuggerTransactions.SetData() uses the single local variable TransactionBuffer for both an outer loop (SetRange('Run ID') → FindSet → Next) and an inner grouping loop (SetRange('Transaction ID') → FindSet → Next). The inner FindSet resets TransactionBuffer's cursor. After the inner loop completes and SetRange('Transaction ID') is cleared, the outer until TransactionBuffer.Next() = 0 continues from the inner loop's exhausted cursor position, not the outer one. This causes missing or duplicate transaction rows and unpredictable iteration termination.",
+      "location": { "file": "src/Pages/DataDebuggerTransactions.Page.al", "line": 78, "range": "62-130" },
+      "references": [],
+      "confidence": "high",
+      "from-sub-skill": "agent",
+      "fix-hint": "Declare a second local record variable (e.g. InnerBuffer: Record \"Data Debugger Change Buffer\") for the inner grouping loop, or restructure the procedure to perform two separate passes: one to collect all unique transaction IDs into a List, and a second pass per ID.",
+      "suggested-code-omission-reason": "The fix requires a structural refactor of the nested loop; a one-line replacement is not sufficient."
+    },
+    {
+      "id": "agent:issystemtableexcluded-zero-slot-latent-bug",
+      "source": "agent",
+      "domain": "correctness",
+      "severity": "minor",
+      "message": "IsSystemTableExcluded() in DataDebuggerFilterManager declares ExcludedTables as array[100] of Integer but populates only 19 elements. Integer array slots default to 0. The loop iterates all 100 slots, so IsSystemTableExcluded(0) matches slot 20 and returns true. Today, synthetic entries (TableId = 0) bypass the filter by calling AddChange() directly rather than going through IsTableAllowed(). If that routing ever changes, error entries would be silently excluded from capture.",
+      "location": { "file": "src/Codeunits/DataDebuggerFilterManager.Codeunit.al", "line": 155, "range": "148-190" },
+      "references": [],
+      "confidence": "medium",
+      "from-sub-skill": "agent",
+      "fix-hint": "Resize the array to exactly 19 (the number of entries used), or add an early guard: if TableId = 0 then exit(false).",
+      "suggested-code": "local procedure IsSystemTableExcluded(TableId: Integer): Boolean\nvar\n    ExcludedTables: array[19] of Integer;\n    i: Integer;\nbegin\n    if TableId = 0 then\n        exit(false); // synthetic entries (Session Runtime Error) must never be excluded\n    ExcludedTables[1] := Database::\"Change Log Entry\";\n    // ... (remaining 18 entries unchanged)\n    for i := 1 to ArrayLen(ExcludedTables) do\n        if ExcludedTables[i] = TableId then\n            exit(true);\n    exit(false);\nend;",
+      "suggested-code-omission-reason": null
+    },
+    {
+      "id": "microsoft/knowledge/data-modeling/setup-table-is-a-singleton.md",
+      "source": "bcquality",
+      "domain": "data-modeling",
+      "severity": "minor",
+      "message": "Both GetSetup() (DataDebuggerSetup) and GetState() (DDRecordingState) call Insert() when the singleton record is absent. GetSetup() is called by FilterManager.LoadSetup() which is called by IsTableAllowed() — executed on every database trigger event in every session. The first trigger call in a new company therefore issues a DB write inside a global-trigger subscriber, which can produce unexpected transaction semantics and will fail for users with only read permissions on these tables.",
+      "location": { "file": "src/Tables/DataDebuggerSetup.Table.al", "line": 60, "range": "58-80" },
+      "references": [
+        { "path": "microsoft/knowledge/data-modeling/setup-table-is-a-singleton.md", "sha": null }
+      ],
+      "confidence": "medium",
+      "from-sub-skill": "al-data-modeling-review",
+      "fix-hint": "Initialise the singleton record in DDAgentInstall.OnInstallAppPerDatabase() and avoid any Insert() calls from read paths. The GetSetup()/GetState() procedures should be pure reads that return defaults without writing."
+    },
+    {
+      "id": "microsoft/knowledge/performance/avoid-user-prompts-inside-transactions.md",
+      "source": "bcquality",
+      "domain": "performance",
+      "severity": "minor",
+      "message": "DataDebuggerSetup.Page OnValidate trigger for 'Table Capture Scope' calls CurrPage.SaveRecord() followed immediately by Commit(). The Commit() is used only to release the write lock before RunModal(). An explicit Commit() in a field trigger prematurely commits any partial record changes accumulated up to that point and can cause data inconsistency if subsequent operations in the same user interaction fail.",
+      "location": { "file": "src/Pages/DataDebuggerSetup.Page.al", "line": 33, "range": "26-47" },
+      "references": [
+        { "path": "microsoft/knowledge/performance/avoid-user-prompts-inside-transactions.md", "sha": null }
+      ],
+      "confidence": "medium",
+      "from-sub-skill": "al-performance-review",
+      "fix-hint": "Move the 'open Table Filters' navigation to a dedicated action (not a field trigger), which naturally avoids the write-transaction conflict."
+    },
+    {
+      "id": "microsoft/knowledge/performance/use-setautocalcfields-for-per-row-flowfields.md",
+      "source": "bcquality",
+      "domain": "performance",
+      "severity": "minor",
+      "message": "GetChanges() in DataDebuggerSessionManager calls CalcFields('Old Data', 'New Data', 'Call Stack') inside a FindSet/Next loop, issuing three extra database round-trips per row. For large recordings (near the MaxRecordsPerSession limit of 10 000) this can issue 30 000 supplementary queries.",
+      "location": { "file": "src/Codeunits/DataDebuggerSessionManager.Codeunit.al", "line": 490, "range": "484-510" },
+      "references": [
+        { "path": "microsoft/knowledge/performance/use-setautocalcfields-for-per-row-flowfields.md", "sha": null }
+      ],
+      "confidence": "medium",
+      "from-sub-skill": "al-performance-review",
+      "fix-hint": "Call ChangeBuffer.SetAutoCalcFields('Old Data', 'New Data', 'Call Stack') once before FindSet(). Verify that eager BLOB loading does not exceed memory limits for the expected row count.",
+      "suggested-code": "ChangeBuffer.SetRange(\"Run ID\", State.\"Run ID\");\nChangeBuffer.SetAutoCalcFields(\"Old Data\", \"New Data\", \"Call Stack\");\nif ChangeBuffer.FindSet() then\n    repeat\n        TempBuffer := ChangeBuffer;\n        TempBuffer.Insert();\n    until ChangeBuffer.Next() = 0;",
+      "suggested-code-omission-reason": null
+    },
+    {
+      "id": "agent:performance-analysis-extra-findfirst",
+      "source": "agent",
+      "domain": "performance",
+      "severity": "minor",
+      "message": "PerformPerformanceAnalysis in DataDebuggerAnalysisEngine calls ChangeBuffer.FindFirst() after the FindSet/Next loop has already advanced through all records, solely to read the first Timestamp1 for the TotalDuration calculation. This is an unnecessary second database pass; the first timestamp could have been stored in a local variable during the initial loop (ChangeCount = 1 branch).",
+      "location": { "file": "src/Codeunits/DataDebuggerAnalysisEngine.Codeunit.al", "line": 107, "range": "100-120" },
+      "references": [],
+      "confidence": "high",
+      "from-sub-skill": "agent",
+      "fix-hint": "Introduce a local FirstTimestamp: DateTime variable, set it when ChangeCount = 1 inside the loop, and replace ChangeBuffer.FindFirst() + ChangeBuffer.Timestamp1 with FirstTimestamp.",
+      "suggested-code": "var\n    FirstTimestamp: DateTime;\n    ...\n// inside the repeat loop, after ChangeCount += 1:\nif ChangeCount = 1 then\n    FirstTimestamp := CurrentTimestamp;\n...\n// replace ChangeBuffer.FindFirst():\nTotalDuration := PrevTimestamp - FirstTimestamp;",
+      "suggested-code-omission-reason": null
+    },
+    {
+      "id": "microsoft/knowledge/security/permission-set-avoid-wildcard-grants.md",
+      "source": "bcquality",
+      "domain": "security",
+      "severity": "minor",
+      "message": "GeneratedPermission.permissionset.al grants full tabledata RIMD on every app table, including Delete on 'Data Debugger Change Buffer', allowing any assigned user to wipe all recordings. The set also grants Execute on every codeunit, page, and internal agent codeunit. The name 'GeneratedPermission' is opaque and the Caption property is absent.",
+      "location": { "file": "GeneratedPermission.permissionset.al", "line": 1, "range": "1-52" },
+      "references": [
+        { "path": "microsoft/knowledge/security/permission-set-avoid-wildcard-grants.md", "sha": null }
+      ],
+      "confidence": "medium",
+      "from-sub-skill": "al-security-review",
+      "fix-hint": "Split into at least: 'DD-READ' (RIM on Change Buffer, R on setup/filter tables, X on pages/queries) and 'DD-ADMIN' (full RIMD plus codeunit Execute). Add Caption to both. Follow the compose-permission-sets-with-included-sets pattern."
+    },
+    {
+      "id": "microsoft/knowledge/appsource/keep-copilot-help-url-to-two-path-levels.md",
+      "source": "bcquality",
+      "domain": "appsource",
+      "severity": "minor",
+      "message": "DDAgentInstall.RegisterCapability() passes LearnMoreUrlTxt = 'https://github.com/' (locked label). The URL has zero meaningful path segments. BC Copilot capability registration requires the learn-more URL to point to documentation with at least two path levels (publisher + repository or page).",
+      "location": { "file": "src/Agent/DDAgentInstall.Codeunit.al", "line": 16, "range": "13-22" },
+      "references": [
+        { "path": "microsoft/knowledge/appsource/keep-copilot-help-url-to-two-path-levels.md", "sha": null }
+      ],
+      "confidence": "high",
+      "from-sub-skill": "al-appsource-review",
+      "fix-hint": "Set the label to a real documentation URL, e.g. 'https://github.com/Default-Publisher/DataDebugger/blob/main/README.md'.",
+      "suggested-code": "LearnMoreUrlTxt: Label 'https://github.com/Default-Publisher/DataDebugger/blob/main/README.md', Locked = true;"
+    },
+    {
+      "id": "agent:tests-not-in-separate-project",
+      "source": "agent",
+      "domain": "testing",
+      "severity": "minor",
+      "message": "Test codeunits (src/Tests/) live in the same app.json project as production code, so tests are compiled into the shipping .app. TestPermissions = Disabled on all test codeunits means every test runs as SUPER with no permission boundary. Coverage gaps: no tests for (a) IsTableAllowed with whitelist/blacklist scopes, (b) FilterFields field-level filtering, (c) the API page, (d) DDAgentDiagnose / DDAgentProvision, (e) GetSetup() auto-insert behaviour, (f) GetClientType() correctness.",
+      "location": { "file": "src/Tests/DataDebuggerRecordingTests.Codeunit.al", "line": 1, "range": "1-15" },
+      "references": [],
+      "confidence": "high",
+      "from-sub-skill": "agent",
+      "fix-hint": "Create a separate AL project (with its own app.json) for tests that references the main app as a dependency. Add at least one permission-lowered test, one test per filter scope, and one test for each of the uncovered scenarios listed above."
+    },
+    {
+      "id": "agent:ff-al-scratch-file-in-root",
+      "source": "agent",
+      "domain": "style",
+      "severity": "minor",
+      "message": "ff.al in the workspace root contains a full page object (page 50040 'Event Recorder Custom') but violates naming conventions (should be Pag50040.EventRecorderCustom.Page.al), folder conventions (should be under src/Pages/), and appears to be a scratch copy. It is compiled into the app in its current location.",
+      "location": { "file": "ff.al", "line": 1, "range": "1-5" },
+      "references": [],
+      "confidence": "high",
+      "from-sub-skill": "agent",
+      "fix-hint": "Move the file to src/Pages/ and rename it Pag50040.EventRecorderCustom.Page.al, or remove it if it is a temporary working copy."
+    },
+    {
+      "id": "microsoft/knowledge/style/labels-declared-at-object-scope.md",
+      "source": "bcquality",
+      "domain": "style",
+      "severity": "minor",
+      "message": "DataDebuggerAnalysisEngine uses inline string literals as AnalysisBuffer description values (e.g. 'Table Impact', 'User Impact', 'Change Rate', 'Table %1 had %2 changes', 'Average changes per second during recording'). These are never translatable because they are not declared as Label variables at object scope.",
+      "location": { "file": "src/Codeunits/DataDebuggerAnalysisEngine.Codeunit.al", "line": 63, "range": "55-200" },
+      "references": [
+        { "path": "microsoft/knowledge/style/labels-declared-at-object-scope.md", "sha": null }
+      ],
+      "confidence": "medium",
+      "from-sub-skill": "al-style-review",
+      "fix-hint": "Declare a Label variable at codeunit scope for each distinct user-facing string and reference them in the analysis procedures."
+    },
+    {
+      "id": "agent:getclienttype-returns-free-text-not-enum",
+      "source": "agent",
+      "domain": "style",
+      "severity": "info",
+      "message": "DataDebuggerContextManager.GetClientType() returns a free-form Text string. Using CurrentClientType() returns the platform ClientType enum (Desktop, Web, Tablet, Phone, NAS, OData, Management, etc.), which is type-safe, localisation-safe, and carries the complete set of BC client types.",
+      "location": { "file": "src/Codeunits/DataDebuggerContextManager.Codeunit.al", "line": 68, "range": "68-78" },
+      "references": [],
+      "confidence": "high",
+      "from-sub-skill": "agent"
+    },
+    {
+      "id": "agent:getinstructions-returns-text-not-secrettext",
+      "source": "agent",
+      "domain": "security",
+      "severity": "info",
+      "message": "DDAgentProvision.GetInstructions() returns Text, assigned to InstructionsSecret: SecretText before Agent.SetInstructions(). Text → SecretText assignment works but the plain-text value is visible in memory before wrapping. Since the instructions contain no credentials this is low-risk, but the naming is misleading — InstructionsSecret implies protected content.",
+      "location": { "file": "src/Agent/DDAgentProvision.Codeunit.al", "line": 37, "range": "34-55" },
+      "references": [],
+      "confidence": "low",
+      "from-sub-skill": "agent"
+    },
+    {
+      "id": "agent:statustext-recording-literal-repeated",
+      "source": "agent",
+      "domain": "style",
+      "severity": "info",
+      "message": "DataDebugger.Page.al hard-codes the string 'RECORDING' in at least two StyleExpr and one Visible expression. If the status representation changes, all occurrences must be updated manually. A named text constant or a Boolean page variable would be safer.",
+      "location": { "file": "src/Pages/DataDebugger.Page.al", "line": 22, "range": "20-165" },
+      "references": [],
+      "confidence": "medium",
+      "from-sub-skill": "agent"
+    },
+    {
+      "id": "agent:recording-run-api-query-entirely-commented-out",
+      "source": "agent",
+      "domain": "style",
+      "severity": "info",
+      "message": "src/API/DataDebuggerRecordingRunAPI.Query.al is 100 % commented-out dead code. The permission set also has its corresponding line commented. Either complete and activate the query, or remove the file to reduce noise.",
+      "location": { "file": "src/API/DataDebuggerRecordingRunAPI.Query.al", "line": 1, "range": "1-35" },
+      "references": [],
+      "confidence": "high",
+      "from-sub-skill": "agent"
+    }
+  ],
+  "suppressed": [],
+  "sub-results": []
+}

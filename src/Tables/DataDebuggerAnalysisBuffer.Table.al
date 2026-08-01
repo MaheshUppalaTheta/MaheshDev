@@ -74,14 +74,14 @@ table 50004 "Data Debugger Analysis Buffer"
 
     procedure GetDetails(): Text
     var
+        TypeHelper: Codeunit "Type Helper";
         InStream: InStream;
-        DetailsText: Text;
     begin
         CalcFields(Details);
         if not Details.HasValue() then
             exit('');
         Details.CreateInStream(InStream, TextEncoding::UTF8);
-        InStream.ReadText(DetailsText);
-        exit(DetailsText);
+        // Read every line so multi-line detail text is not truncated to the first line.
+        exit(TypeHelper.ReadAsTextWithSeparator(InStream, TypeHelper.LFSeparator()));
     end;
 }

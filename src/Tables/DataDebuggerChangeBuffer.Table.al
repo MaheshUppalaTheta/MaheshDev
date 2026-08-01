@@ -116,16 +116,17 @@ table 50000 "Data Debugger Change Buffer"
 
     procedure GetOldData(): Text
     var
+        TypeHelper: Codeunit "Type Helper";
         InStream: InStream;
-        DataText: Text;
     begin
         CalcFields("Old Data");
         if not "Old Data".HasValue() then
             exit('');
 
         "Old Data".CreateInStream(InStream, TextEncoding::UTF8);
-        InStream.ReadText(DataText);
-        exit(DataText);
+        // Read every line: a single InStream.ReadText stops at the first line break, which would
+        // truncate any multi-line content (e.g. a field value containing a newline).
+        exit(TypeHelper.ReadAsTextWithSeparator(InStream, TypeHelper.LFSeparator()));
     end;
 
     procedure SetNewData(DataText: Text)
@@ -138,16 +139,16 @@ table 50000 "Data Debugger Change Buffer"
 
     procedure GetNewData(): Text
     var
+        TypeHelper: Codeunit "Type Helper";
         InStream: InStream;
-        DataText: Text;
     begin
         CalcFields("New Data");
         if not "New Data".HasValue() then
             exit('');
 
         "New Data".CreateInStream(InStream, TextEncoding::UTF8);
-        InStream.ReadText(DataText);
-        exit(DataText);
+        // Read every line (see GetOldData) so multi-line content is not truncated.
+        exit(TypeHelper.ReadAsTextWithSeparator(InStream, TypeHelper.LFSeparator()));
     end;
 
     procedure SetCallStack(CallStackText: Text)
@@ -160,15 +161,16 @@ table 50000 "Data Debugger Change Buffer"
 
     procedure GetCallStack(): Text
     var
+        TypeHelper: Codeunit "Type Helper";
         InStream: InStream;
-        CallStackText: Text;
     begin
         CalcFields("Call Stack");
         if not "Call Stack".HasValue() then
             exit('');
 
         "Call Stack".CreateInStream(InStream, TextEncoding::UTF8);
-        InStream.ReadText(CallStackText);
-        exit(CallStackText);
+        // A call stack is multi-line: read all lines (a single InStream.ReadText would return only
+        // the first frame). Rejoined with LF so the whole stack is shown/exported.
+        exit(TypeHelper.ReadAsTextWithSeparator(InStream, TypeHelper.LFSeparator()));
     end;
 }

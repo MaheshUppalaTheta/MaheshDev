@@ -239,10 +239,31 @@ page 50008 "DD Advanced Analysis"
             until OriginalAnalysisBuffer.Next() = 0;
 
         UpdateSummary();
-        AnalysisTime := Format(CurrentDateTime() - StartTime, 0, '<Hours24,2>:<Minutes,2>:<Seconds,2>');
+        AnalysisTime := FormatElapsedTime(CurrentDateTime() - StartTime);
 
         ApplyFilters();
         CurrPage.Update(false);
+    end;
+
+    local procedure FormatElapsedTime(ElapsedDuration: Duration): Text
+    var
+        TotalSeconds: Integer;
+        Hours: Integer;
+        Minutes: Integer;
+        Seconds: Integer;
+    begin
+        TotalSeconds := ElapsedDuration div 1000;
+        Hours := TotalSeconds div 3600;
+        Minutes := (TotalSeconds mod 3600) div 60;
+        Seconds := TotalSeconds mod 60;
+        exit(StrSubstNo('%1:%2:%3', PadZero(Hours), PadZero(Minutes), PadZero(Seconds)));
+    end;
+
+    local procedure PadZero(Value: Integer): Text
+    begin
+        if Value < 10 then
+            exit('0' + Format(Value));
+        exit(Format(Value));
     end;
 
     local procedure UpdateSummary()

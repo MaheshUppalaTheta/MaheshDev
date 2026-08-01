@@ -261,4 +261,5 @@ page 50040 "Event Recorder Custom"
                 exit('XmlPort');
         end;
     end;
+
 }

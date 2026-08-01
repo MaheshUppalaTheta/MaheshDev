@@ -219,6 +219,22 @@ page 50000 "Data Debugger"
                     LiveStatsPage.RunModal();
                 end;
             }
+
+            action(CreateAgent)
+            {
+                Caption = 'Create Data Debugger Agent';
+                ToolTip = 'Create and activate the Data Debugger Agent. Requires the Data Debugger Agent Copilot capability to be enabled and billing configured.';
+                Image = Sparkle;
+
+                trigger OnAction()
+                var
+                    AgentProvision: Codeunit "DD Agent Provision";
+                begin
+                    if not Confirm('Create and activate the Data Debugger Agent now?', false) then
+                        exit;
+                    AgentProvision.CreateDataDebuggerAgent();
+                end;
+            }
         }
     }
 
