@@ -17,24 +17,21 @@ page 50007 "Data Debugger Transactions"
                 {
                     Caption = 'Transaction ID';
                     ApplicationArea = All;
+                    ToolTip = 'The unique identifier of the database transaction that grouped these changes.';
                 }
 
                 field(Value; Rec.Value)
                 {
-                    Caption = 'Change Count';
+                    Caption = 'Time Range';
                     ApplicationArea = All;
+                    ToolTip = 'The time range covered by changes in this transaction.';
                 }
 
                 field("Value Long"; Rec."Value Long")
                 {
-                    Caption = 'First User';
+                    Caption = 'Changes / First User';
                     ApplicationArea = All;
-                }
-
-                field("Value BLOB"; TransactionTime)
-                {
-                    Caption = 'Time Range';
-                    ApplicationArea = All;
+                    ToolTip = 'Number of changes and the first user who made a change in this transaction.';
                 }
             }
         }
@@ -81,11 +78,11 @@ page 50007 "Data Debugger Transactions"
     var
         CurrentRunId: Guid;
         SessionStartTime: DateTime;
-        TransactionTime: Text;
 
     procedure SetData(var SourceBuffer: Record "Data Debugger Change Buffer"; RunId: Guid)
     var
         TransactionBuffer: Record "Data Debugger Change Buffer";
+        InnerBuffer: Record "Data Debugger Change Buffer";
         TransactionId: Guid;
         ChangeCount: Integer;
         FirstUser: Text;
@@ -114,17 +111,18 @@ page 50007 "Data Debugger Transactions"
                         Clear(MinTime);
                         Clear(MaxTime);
 
-                        TransactionBuffer.SetRange("Transaction ID", TransactionId);
-                        if TransactionBuffer.FindSet() then begin
+                        InnerBuffer.SetRange("Run ID", RunId);
+                        InnerBuffer.SetRange("Transaction ID", TransactionId);
+                        if InnerBuffer.FindSet() then begin
                             repeat
                                 ChangeCount += 1;
                                 if FirstUser = '' then
-                                    FirstUser := TransactionBuffer."User Name";
-                                if (MinTime = 0DT) or (TransactionBuffer.Timestamp1 < MinTime) then
-                                    MinTime := TransactionBuffer.Timestamp1;
-                                if (MaxTime = 0DT) or (TransactionBuffer.Timestamp1 > MaxTime) then
-                                    MaxTime := TransactionBuffer.Timestamp1;
-                            until TransactionBuffer.Next() = 0;
+                                    FirstUser := InnerBuffer."User Name";
+                                if (MinTime = 0DT) or (InnerBuffer.Timestamp1 < MinTime) then
+                                    MinTime := InnerBuffer.Timestamp1;
+                                if (MaxTime = 0DT) or (InnerBuffer.Timestamp1 > MaxTime) then
+                                    MaxTime := InnerBuffer.Timestamp1;
+                            until InnerBuffer.Next() = 0;
                         end;
 
                         // Build time range string
@@ -138,13 +136,10 @@ page 50007 "Data Debugger Transactions"
                         Rec.Init();
                         Rec.ID := Rec.Count() + 1;
                         Rec.Name := Format(TransactionId);
-                        Rec.Value := Format(ChangeCount);
-                        Rec."Value Long" := FirstUser;
+                        Rec.Value := CopyStr(TimeRange, 1, MaxStrLen(Rec.Value));
+                        Rec."Value Long" := CopyStr(Format(ChangeCount) + ' / ' + FirstUser, 1, MaxStrLen(Rec."Value Long"));
                         Rec.Insert();
-
-                        TransactionTime := TimeRange;
                     end;
-                    TransactionBuffer.SetRange("Transaction ID");
                 end;
             until TransactionBuffer.Next() = 0;
         end;

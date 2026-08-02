@@ -73,8 +73,9 @@ table 50001 "Data Debugger Setup"
             Setup."Max Records Per Session" := 10000;
             Setup."Enable Performance Throttling" := false;
             Setup."Max Captures Per Second" := 100;
-            Setup."Direct Database Capture" := false; // default to rollback-safe in-memory capture
+            Setup."Direct Database Capture" := false;
             Setup.Insert();
+            exit(Setup);
         end;
         exit(Setup);
     end;

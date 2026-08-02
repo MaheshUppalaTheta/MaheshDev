@@ -51,26 +51,29 @@ codeunit 50001 "Data Debugger Event Handlers"
     local procedure OnAfterOnGlobalModify(RecRef: RecordRef)
     var
         xRecRef: RecordRef;
-        IsReadable: Boolean;
     begin
         if not SessionManager.ShouldCapture() then
             exit;
         if not FilterManager.IsTableAllowed(RecRef.Number()) then
             exit;
+
+        // xRecRef must be open before ShouldCaptureModification accesses its fields
+        xRecRef.Open(RecRef.Number, false, RecRef.CurrentCompany());
+        xRecRef.ReadIsolation := xRecRef.ReadIsolation::ReadCommitted;
+        xRecRef."SecurityFiltering" := SECURITYFILTER::Filtered;
+
         if not FilterManager.ShouldCaptureModification(RecRef, xRecRef) then
             exit;
         if not FilterManager.CanCaptureNow() then
             exit;
 
-        xRecRef.Open(RecRef.Number, false, RecRef.CurrentCompany());
-        xRecRef.ReadIsolation := xRecRef.ReadIsolation::ReadCommitted;
-        xRecRef."SecurityFiltering" := SECURITYFILTER::Filtered;
-        if xRecRef.ReadPermission() then begin
-            IsReadable := true;
-            if not xRecRef.Get(RecRef.RecordId) then
-                exit;
+        if not xRecRef.ReadPermission() then begin
+            // old data unreadable — capture with marker so diff is traceable
+            CaptureModify(RecRef, xRecRef);
+            exit;
         end;
-
+        if not xRecRef.Get(RecRef.RecordId) then
+            exit;
         CaptureModify(RecRef, xRecRef);
     end;
 

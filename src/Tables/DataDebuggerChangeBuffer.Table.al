@@ -33,14 +33,17 @@ table 50000 "Data Debugger Change Buffer"
         field(7; "Primary Key"; Text[500])
         {
             Caption = 'Primary Key';
+            DataClassification = CustomerContent;
         }
         field(8; "Old Data"; Blob)
         {
             Caption = 'Old Data';
+            DataClassification = CustomerContent;
         }
         field(9; "New Data"; Blob)
         {
             Caption = 'New Data';
+            DataClassification = CustomerContent;
         }
         field(10; "Record Count"; Integer)
         {
@@ -50,10 +53,12 @@ table 50000 "Data Debugger Change Buffer"
         field(11; "User ID"; Code[50])
         {
             Caption = 'User ID';
+            DataClassification = EndUserPseudonymousIdentifiers;
         }
         field(12; "User Name"; Text[80])
         {
             Caption = 'User Name';
+            DataClassification = EndUserIdentifiableInformation;
         }
         field(13; "Company Name"; Text[30])
         {
@@ -70,6 +75,7 @@ table 50000 "Data Debugger Change Buffer"
         field(16; "Call Stack"; Blob)
         {
             Caption = 'Call Stack';
+            DataClassification = CustomerContent;
         }
         field(17; "Trigger Source"; Text[250])
         {

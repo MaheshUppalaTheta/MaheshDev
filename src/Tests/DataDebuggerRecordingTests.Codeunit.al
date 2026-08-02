@@ -311,4 +311,106 @@ codeunit 50140 "DD Recording Tests"
         // Swallow StartRecording/StopRecording status messages so the test runner doesn't fail on
         // an unhandled UI dialog.
     end;
+
+    // ---------------------------------------------------------------------------------------------
+    // Spec A correctness tests
+    // ---------------------------------------------------------------------------------------------
+
+    [Test]
+    [HandlerFunctions('MessageHandler')]
+    procedure ClientType_CapturedCorrectly()
+    var
+        Customer: Record Customer;
+        ResultBuffer: Record "Data Debugger Change Buffer" temporary;
+        SessionManager: Codeunit "Data Debugger Session Manager";
+        RunId: Guid;
+    begin
+        // [SCENARIO] After capturing a change the Client Type reflects the actual session type,
+        // not the hard-coded 'Client' that SessionId() > 0 always returned.
+        Initialize();
+        EnsureCustomer(Customer);
+
+        // [GIVEN] A recording started for the current user
+        RunId := SessionManager.StartRecording(UserSecurityId(), CopyStr(UserId(), 1, 50), 'Test User');
+
+        // [WHEN] A Customer record is modified
+        Customer.Validate(Name, CopyStr(Customer.Name + 'C', 1, MaxStrLen(Customer.Name)));
+        Customer.Modify(true);
+
+        // [THEN] The captured entry has a non-empty Client Type that is NOT the literal 'Client'
+        // (test runner sessions are Background, not Client)
+        SessionManager.GetChanges(ResultBuffer);
+        ResultBuffer.SetRange("Table ID", Database::Customer);
+        ResultBuffer.SetRange("Change Type", "Data Debugger Change Type"::Modify);
+        AssertTrue(not ResultBuffer.IsEmpty(), 'Expected a captured Modify entry for Client Type test.');
+        if ResultBuffer.FindFirst() then begin
+            AssertTrue(ResultBuffer."Client Type" <> '', 'Client Type must not be empty.');
+            AssertTrue(ResultBuffer."Client Type" <> 'Client', 'Client type must reflect actual session type, not hard-coded Client.');
+        end;
+
+        StopForTest();
+    end;
+
+    [Test]
+    [HandlerFunctions('MessageHandler')]
+    procedure ModifyCapture_DoesNotThrow()
+    var
+        Customer: Record Customer;
+        ResultBuffer: Record "Data Debugger Change Buffer" temporary;
+        SessionManager: Codeunit "Data Debugger Session Manager";
+        RunId: Guid;
+    begin
+        // [SCENARIO] The restructured xRecRef permission guard does not throw an exception on the
+        // normal capture path (i.e. fixing the dead-code / pre-open regression didn't break capture).
+        Initialize();
+        EnsureCustomer(Customer);
+
+        // [GIVEN] A recording started for the current user
+        RunId := SessionManager.StartRecording(UserSecurityId(), CopyStr(UserId(), 1, 50), 'Test User');
+
+        // [WHEN] A Customer record is modified (exercises the fixed OnAfterOnGlobalModify)
+        Customer.Validate(Name, CopyStr(Customer.Name + 'P', 1, MaxStrLen(Customer.Name)));
+        Customer.Modify(true);
+
+        // [THEN] At least one change is captured and no unhandled exception was raised
+        SessionManager.GetChanges(ResultBuffer);
+        ResultBuffer.SetRange("Table ID", Database::Customer);
+        AssertTrue(not ResultBuffer.IsEmpty(), 'Expected at least one captured change after modify; no exception should have been raised.');
+
+        StopForTest();
+    end;
+
+    [Test]
+    [HandlerFunctions('MessageHandler')]
+    procedure TransactionGrouping_Setup_Valid()
+    var
+        Customer: Record Customer;
+        ResultBuffer: Record "Data Debugger Change Buffer" temporary;
+        SessionManager: Codeunit "Data Debugger Session Manager";
+        RunId: Guid;
+        I: Integer;
+    begin
+        // [SCENARIO] Three sequential Customer modifies produce exactly 3 captured changes so the
+        // transaction-grouping data path (used by the Transactions page) has correct input.
+        Initialize();
+        EnsureCustomer(Customer);
+
+        // [GIVEN] A recording is active for the current user
+        RunId := SessionManager.StartRecording(UserSecurityId(), CopyStr(UserId(), 1, 50), 'Test User');
+
+        // [WHEN] Three Customer modifies are made in sequence
+        for I := 1 to 3 do begin
+            Customer.Get(Customer."No.");
+            Customer.Validate(Name, CopyStr('DD-TXN-' + Format(I), 1, MaxStrLen(Customer.Name)));
+            Customer.Modify(true);
+        end;
+
+        // [THEN] GetChanges returns exactly 3 Customer Modify entries
+        SessionManager.GetChanges(ResultBuffer);
+        ResultBuffer.SetRange("Table ID", Database::Customer);
+        ResultBuffer.SetRange("Change Type", "Data Debugger Change Type"::Modify);
+        AssertTrue(ResultBuffer.Count() = 3, 'Expected exactly 3 captured Customer Modify entries for transaction grouping test.');
+
+        StopForTest();
+    end;
 }

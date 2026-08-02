@@ -24,14 +24,17 @@ table 50007 "DD Recording State"
         field(4; "Recorded User Security ID"; Guid)
         {
             Caption = 'Recorded User Security ID';
+            DataClassification = EndUserPseudonymousIdentifiers;
         }
         field(5; "Recorded User ID"; Code[50])
         {
             Caption = 'Recorded User ID';
+            DataClassification = EndUserPseudonymousIdentifiers;
         }
         field(6; "Recorded User Name"; Text[80])
         {
             Caption = 'Recorded User Name';
+            DataClassification = EndUserIdentifiableInformation;
         }
         field(7; "Start Time"; DateTime)
         {
@@ -60,7 +63,7 @@ table 50007 "DD Recording State"
         if not State.Get('') then begin
             State.Init();
             State."Primary Key" := '';
-            State.Insert();
+            exit(State);
         end;
         exit(State);
     end;

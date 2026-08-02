@@ -353,11 +353,10 @@ codeunit 50000 "Data Debugger Session Manager"
         end;
 
         State := State.GetState();
+        ChangeBuffer.SetAutoCalcFields("Old Data", "New Data", "Call Stack");
         ChangeBuffer.SetRange("Run ID", State."Run ID");
         if ChangeBuffer.FindSet() then
             repeat
-                // Load BLOBs so they are carried by the assignment into the temporary buffer.
-                ChangeBuffer.CalcFields("Old Data", "New Data", "Call Stack");
                 TempBuffer := ChangeBuffer;
                 TempBuffer.Insert();
             until ChangeBuffer.Next() = 0;

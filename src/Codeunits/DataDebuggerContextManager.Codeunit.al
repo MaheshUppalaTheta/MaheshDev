@@ -88,13 +88,6 @@ codeunit 50003 "Data Debugger Context Manager"
 
     local procedure GetClientType(): Text
     begin
-        case true of
-            (SessionId() = 0):
-                exit('Server');
-            (SessionId() > 0):
-                exit('Client');
-            else
-                exit('Unknown');
-        end;
+        exit(Format(CurrentClientType()));
     end;
 }

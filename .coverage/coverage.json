@@ -9,6 +9,15 @@
     "50140|NormalProcess_StopPersistsToRealTable": 1,
     "50140|RollbackSafe_CapturesSurviveProcessError": 1,
     "50140|ErrorThenStop_PersistsSurvivingCaptures": 1,
-    "50140|DirectMode_CapturesLostOnProcessError": 1
+    "50140|DirectMode_CapturesLostOnProcessError": 1,
+    "50142|MultiUser_OtherUser_NotCaptured": 0,
+    "50142|MultiUser_CurrentUser_Captured": 1,
+    "50142|TableScope_Whitelist_UnlistedTableIgnored": 0,
+    "50142|TableScope_Blacklist_ListedTableIgnored": 0,
+    "50142|FieldFilter_WithSelection_CaptureNotBlocked": 1,
+    "50142|Throttle_Enabled_UnderLimit_AllCaptured": 1,
+    "50140|ClientType_CapturedCorrectly": 1,
+    "50140|ModifyCapture_DoesNotThrow": 1,
+    "50140|TransactionGrouping_Setup_Valid": 1
   }
 }
