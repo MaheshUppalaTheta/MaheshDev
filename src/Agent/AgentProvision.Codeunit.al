@@ -1,14 +1,14 @@
-codeunit 50010 "DD Agent Provision"
+codeunit 72930460 "Agent Provision_TSA_TSL"
 {
-    // Layer B: programmatically create + activate the Data Debugger Agent in one click. Requires the
-    // Custom Agent / Data Debugger Agent Copilot capability to be enabled and billing to be set up
+    // Layer B: programmatically create + activate the Troubleshooting Assistance Agent in one click. Requires the
+    // Custom Agent / Troubleshooting Assistance Agent Copilot capability to be enabled and billing to be set up
     // (an admin gate Microsoft enforces; an extension cannot bypass it). Once enabled, this creates a
     // fully configured instance from the registered agent type — no manual setup needed.
     Access = Internal;
     InherentEntitlements = X;
     InherentPermissions = X;
 
-    procedure CreateDataDebuggerAgent()
+    procedure CreateTroubleshootingAgent()
     var
         Agent: Codeunit Agent;
         TempAgentAccessControl: Record "Agent Access Control" temporary;
@@ -19,8 +19,8 @@ codeunit 50010 "DD Agent Provision"
         InstructionsSecret: SecretText;
     begin
         NavApp.GetCurrentModuleInfo(ModuleInfo);
-        AgentUserName := 'DATADEBUGGER';
-        AgentDisplayName := 'Data Debugger Agent';
+        AgentUserName := 'TROUBLESHOOTINGASSISTANCE';
+        AgentDisplayName := 'Troubleshooting Assistance Agent';
 
         // The human(s) allowed to configure/interact with the agent (start with the current user).
         TempAgentAccessControl.Init();
@@ -29,26 +29,26 @@ codeunit 50010 "DD Agent Provision"
         TempAgentAccessControl.Insert();
 
         AgentSecId := Agent.Create(
-            Enum::"Agent Metadata Provider"::"Data Debugger Agent",
+            Enum::"Agent Metadata Provider"::"Troubleshoot Agent_TSA_TSL",
             AgentUserName,
             AgentDisplayName,
             TempAgentAccessControl);
 
-        Agent.SetProfile(AgentSecId, 'DD Agent Profile', ModuleInfo.Id());
+        Agent.SetProfile(AgentSecId, 'Agent Profile_TSA_TSL', ModuleInfo.Id());
 
         InstructionsSecret := GetInstructions();
         Agent.SetInstructions(AgentSecId, InstructionsSecret);
 
         Agent.Activate(AgentSecId);
 
-        Message('The Data Debugger Agent has been created and activated.');
+        Message('The Troubleshooting Assistance Agent has been created and activated.');
     end;
 
     local procedure GetInstructions(): Text
     begin
         exit(
-            'You are the Data Debugger Agent for Business Central. After a process is recorded with the Data Debugger, ' +
-            'open the Data Debugger Change Entries page from your role center and review the entries for the latest run. ' +
+            'You are the Troubleshooting Assistance Agent for Business Central. After a process is recorded with Troubleshooting Assistance, ' +
+            'open the Troubleshooting Assistance Change Entries page from your role center and review the entries for the latest run. ' +
             'First look for any Change Type = Error entries and the "Session Runtime Error" entry (Table ID 0); if present, ' +
             'quote the error message and read its Call Stack. Then find the first change that caused the failure or unexpected ' +
             'value (compare Old Values vs New Values), and identify the first non-Microsoft frame in the Call Stack as the likely ' +

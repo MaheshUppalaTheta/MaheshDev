@@ -1,6 +1,6 @@
-# Data Debugger — Knowledge Reference
+# Troubleshooting Assistance — Knowledge Reference
 
-Upload this file to the **Knowledge** section of your Copilot Studio agent. It provides reference data the agent needs when analyzing Data Debugger change entries.
+Upload this file to the **Knowledge** section of your Copilot Studio agent. It provides reference data the agent needs when analyzing Troubleshooting Assistance change entries.
 
 ---
 
@@ -40,7 +40,7 @@ Use these to filter change entries by table when investigating specific areas.
 
 ## Change Entry Fields
 
-Each Data Debugger change entry contains these fields:
+Each Troubleshooting Assistance change entry contains these fields:
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -110,13 +110,13 @@ Call stacks are listed from innermost (top) to outermost (bottom). Example:
 "Sales Line"(Table 37).UpdateVATOnLines line 193 - Base Application by Microsoft
 "Release Sales Document"(CodeUnit 414).CalcAndUpdateVATOnLines line 9 - Base Application by Microsoft
 "Sales-Post"(CodeUnit 80).CheckAndUpdate line 48 - Base Application by Microsoft
-"Demo Bad Extension"(CodeUnit 50050).OnBeforePostSalesDoc line 12 - DataDebugger by Default Publisher
+"Demo Bad Extension"(CodeUnit 72930464).OnBeforePostSalesDoc line 12 - Trouble Shooting Assistance by Theta Systems Limited
 ```
 
 Reading this:
 1. The actual database write happened in `UpdateVATOnLines` (Table 37)
 2. It was called by `Release Sales Document` (CU 414)
 3. Which was called during `Sales-Post` (CU 80)
-4. BUT the chain was initiated by `Demo Bad Extension` (CU 50050) — a non-Microsoft extension subscribing to `OnBeforePostSalesDoc`
+4. BUT the chain was initiated by `Demo Bad Extension` (CU 72930464) — a non-Microsoft extension subscribing to `OnBeforePostSalesDoc`
 
 **Rule of thumb**: Scan from bottom to top. The first non-Microsoft entry is usually the root cause.

@@ -1,8 +1,8 @@
-page 50001 "Data Debugger Results"
+page 72930451 "Results_TSA_TSL"
 {
-    Caption = 'Data Debugger Results';
+    Caption = 'Troubleshooting Assistance Results';
     PageType = List;
-    SourceTable = "Data Debugger Change Buffer";
+    SourceTable = "Change Buffer_TSA_TSL";
     Editable = true;
     SourceTableTemporary = true;
     ApplicationArea = All;
@@ -60,7 +60,7 @@ page 50001 "Data Debugger Results"
 
                     trigger OnDrillDown()
                     var
-                        TablePick: Page "DD Table Pick";
+                        TablePick: Page "Table Pick_TSA_TSL";
                         PickedId: Integer;
                         PickedName: Text;
                     begin
@@ -193,7 +193,7 @@ page 50001 "Data Debugger Results"
                 ApplicationArea = all;
                 trigger OnAction()
                 var
-                    FieldChangesPage: Page "Data Debugger Field Changes";
+                    FieldChangesPage: Page "Field Changes_TSA_TSL";
                 begin
                     // CalcFields to load BLOB data before passing to the page
                     Rec.CalcFields("Old Data", "New Data");
@@ -210,7 +210,7 @@ page 50001 "Data Debugger Results"
                 ApplicationArea = all;
                 trigger OnAction()
                 var
-                    TableSummaryPage: Page "Data Debugger Table Summary";
+                    TableSummaryPage: Page "Table Summary_TSA_TSL";
                 begin
                     TableSummaryPage.SetData(Rec, CurrentRunId);
                     TableSummaryPage.RunModal();
@@ -225,7 +225,7 @@ page 50001 "Data Debugger Results"
                 ApplicationArea = all;
                 trigger OnAction()
                 var
-                    ContextPage: Page "Data Debugger Context Details";
+                    ContextPage: Page "Context Details_TSA_TSL";
                 begin
                     // CalcFields to load BLOB data before passing to the page
                     Rec.CalcFields("Call Stack");
@@ -242,7 +242,7 @@ page 50001 "Data Debugger Results"
                 ApplicationArea = all;
                 trigger OnAction()
                 var
-                    TransactionPage: Page "Data Debugger Transactions";
+                    TransactionPage: Page "Transactions_TSA_TSL";
                 begin
                     TransactionPage.SetData(Rec, CurrentRunId);
                     TransactionPage.RunModal();
@@ -293,7 +293,7 @@ page 50001 "Data Debugger Results"
                 ApplicationArea = all;
                 trigger OnAction()
                 var
-                    AdvancedAnalysisPage: Page "DD Advanced Analysis";
+                    AdvancedAnalysisPage: Page "Advanced Analysis_TSA_TSL";
                 begin
                     AdvancedAnalysisPage.SetSourceData(Rec);
                     AdvancedAnalysisPage.RunModal();
@@ -312,11 +312,11 @@ page 50001 "Data Debugger Results"
         UserFilter: Text[50];
         SearchText: Text[100];
         TableTypeFilter: Option " ","Real Tables Only","Temporary Tables Only";
-        OriginalBuffer: Record "Data Debugger Change Buffer" temporary;
+        OriginalBuffer: Record "Change Buffer_TSA_TSL" temporary;
         OriginalTotal: Integer;
         HasActiveFilters: Boolean;
 
-    procedure SetData(var TempBuffer: Record "Data Debugger Change Buffer" temporary; RunId: Guid; StartTime: DateTime)
+    procedure SetData(var TempBuffer: Record "Change Buffer_TSA_TSL" temporary; RunId: Guid; StartTime: DateTime)
     begin
         CurrentRunId := RunId;
         SessionStartTime := StartTime;
@@ -356,7 +356,7 @@ page 50001 "Data Debugger Results"
 
     local procedure ApplyFilters()
     var
-        FilteredBuffer: Record "Data Debugger Change Buffer";
+        FilteredBuffer: Record "Change Buffer_TSA_TSL";
     begin
         Rec.Reset();
         Rec.DeleteAll();
@@ -377,9 +377,9 @@ page 50001 "Data Debugger Results"
         CurrPage.Update(false);
     end;
 
-    local procedure MatchesFilters(ChangeBuffer: Record "Data Debugger Change Buffer"): Boolean
+    local procedure MatchesFilters(ChangeBuffer: Record "Change Buffer_TSA_TSL"): Boolean
     var
-        ChangeTypeEnum: Enum "Data Debugger Change Type";
+        ChangeTypeEnum: Enum "Change Type_TSA_TSL";
     begin
         // Table filter: exact table when picked via drill-down, otherwise text contains
         if SelectedTableId <> 0 then begin
@@ -484,10 +484,10 @@ page 50001 "Data Debugger Results"
             until Rec.Next() = 0;
         end;
 
-        ExcelBuffer.CreateNewBook('Data Debugger Results');
+        ExcelBuffer.CreateNewBook('Troubleshooting Assistance Results');
         ExcelBuffer.WriteSheet('Results', CompanyName(), UserId());
         ExcelBuffer.CloseBook();
-        ExcelBuffer.SetFriendlyFilename('DataDebuggerResults_' + Format(CurrentRunId));
+        ExcelBuffer.SetFriendlyFilename('TroubleshootingAssistanceResults_' + Format(CurrentRunId));
         ExcelBuffer.OpenExcel();
 
         Message('Results exported to Excel successfully.');
@@ -528,7 +528,7 @@ page 50001 "Data Debugger Results"
         OutStream.WriteText(JsonText);
         TempBlob.CreateInStream(InStream);
 
-        FileName := StrSubstNo('DataDebuggerResults_%1.json', Format(CurrentRunId));
+        FileName := StrSubstNo('TroubleshootingAssistanceResults_%1.json', Format(CurrentRunId));
         DownloadFromStream(InStream, 'Export Results', '', 'JSON Files (*.json)|*.json', FileName);
 
         Message('Results exported to JSON successfully.');

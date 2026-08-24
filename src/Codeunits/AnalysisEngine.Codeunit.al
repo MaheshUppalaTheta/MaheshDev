@@ -1,6 +1,6 @@
-codeunit 50004 "Data Debugger Analysis Engine"
+codeunit 72930454 "Analysis Engine_TSA_TSL"
 {
-    procedure AnalyzeChanges(var ChangeBuffer: Record "Data Debugger Change Buffer"; var AnalysisBuffer: Record "Data Debugger Analysis Buffer")
+    procedure AnalyzeChanges(var ChangeBuffer: Record "Change Buffer_TSA_TSL"; var AnalysisBuffer: Record "Analysis Buffer_TSA_TSL")
     begin
         AnalysisBuffer.Reset();
         AnalysisBuffer.DeleteAll();
@@ -12,7 +12,7 @@ codeunit 50004 "Data Debugger Analysis Engine"
         PerformTableTypeAnalysis(ChangeBuffer, AnalysisBuffer);
     end;
 
-    local procedure PerformImpactAnalysis(var ChangeBuffer: Record "Data Debugger Change Buffer"; var AnalysisBuffer: Record "Data Debugger Analysis Buffer")
+    local procedure PerformImpactAnalysis(var ChangeBuffer: Record "Change Buffer_TSA_TSL"; var AnalysisBuffer: Record "Analysis Buffer_TSA_TSL")
     var
         TableStats: Dictionary of [Integer, Integer];
         UserStats: Dictionary of [Text, Integer];
@@ -100,7 +100,7 @@ codeunit 50004 "Data Debugger Analysis Engine"
         end;
     end;
 
-    local procedure PerformPerformanceAnalysis(var ChangeBuffer: Record "Data Debugger Change Buffer"; var AnalysisBuffer: Record "Data Debugger Analysis Buffer")
+    local procedure PerformPerformanceAnalysis(var ChangeBuffer: Record "Change Buffer_TSA_TSL"; var AnalysisBuffer: Record "Analysis Buffer_TSA_TSL")
     var
         PrevTimestamp: DateTime;
         CurrentTimestamp: DateTime;
@@ -175,7 +175,7 @@ codeunit 50004 "Data Debugger Analysis Engine"
         end;
     end;
 
-    local procedure PerformPatternDetection(var ChangeBuffer: Record "Data Debugger Change Buffer"; var AnalysisBuffer: Record "Data Debugger Analysis Buffer")
+    local procedure PerformPatternDetection(var ChangeBuffer: Record "Change Buffer_TSA_TSL"; var AnalysisBuffer: Record "Analysis Buffer_TSA_TSL")
     var
         TableChangeTypes: Dictionary of [Text, Integer];
         PatternKey: Text;
@@ -261,7 +261,7 @@ codeunit 50004 "Data Debugger Analysis Engine"
         end;
     end;
 
-    local procedure PerformRelationshipMapping(var ChangeBuffer: Record "Data Debugger Change Buffer"; var AnalysisBuffer: Record "Data Debugger Analysis Buffer")
+    local procedure PerformRelationshipMapping(var ChangeBuffer: Record "Change Buffer_TSA_TSL"; var AnalysisBuffer: Record "Analysis Buffer_TSA_TSL")
     var
         TransactionTables: Dictionary of [Guid, List of [Integer]];
         TransactionId: Guid;
@@ -350,7 +350,7 @@ codeunit 50004 "Data Debugger Analysis Engine"
             exit(StrSubstNo('%1s', Seconds));
     end;
 
-    local procedure PerformTableTypeAnalysis(var ChangeBuffer: Record "Data Debugger Change Buffer"; var AnalysisBuffer: Record "Data Debugger Analysis Buffer")
+    local procedure PerformTableTypeAnalysis(var ChangeBuffer: Record "Change Buffer_TSA_TSL"; var AnalysisBuffer: Record "Analysis Buffer_TSA_TSL")
     var
         TempTableCount: Integer;
         RealTableCount: Integer;

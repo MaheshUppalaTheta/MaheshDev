@@ -1,8 +1,8 @@
-page 50006 "Data Debugger Context Details"
+page 72930456 "Context Details_TSA_TSL"
 {
     Caption = 'Context Details';
     PageType = Card;
-    SourceTable = "Data Debugger Change Buffer";
+    SourceTable = "Change Buffer_TSA_TSL";
     Editable = false;
     SourceTableTemporary = true;
     ApplicationArea = All;
@@ -108,8 +108,8 @@ page 50006 "Data Debugger Context Details"
 
                 trigger OnAction()
                 var
-                    RelatedChanges: Record "Data Debugger Change Buffer";
-                    RelatedPage: Page "Data Debugger Results";
+                    RelatedChanges: Record "Change Buffer_TSA_TSL";
+                    RelatedPage: Page "Results_TSA_TSL";
                 begin
                     RelatedChanges.SetRange("Transaction ID", Rec."Transaction ID");
                     RelatedPage.SetTableView(RelatedChanges);
@@ -122,7 +122,7 @@ page 50006 "Data Debugger Context Details"
     var
         CallStackText: Text;
 
-    procedure SetChangeRecord(var ChangeRec: Record "Data Debugger Change Buffer")
+    procedure SetChangeRecord(var ChangeRec: Record "Change Buffer_TSA_TSL")
     begin
         // Ensure BLOB fields are loaded
         ChangeRec.CalcFields("Call Stack");

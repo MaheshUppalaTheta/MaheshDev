@@ -1,4 +1,4 @@
-enum 50000 "Data Debugger Change Type"
+enum 72930450 "Change Type_TSA_TSL"
 {
     Extensible = false;
 

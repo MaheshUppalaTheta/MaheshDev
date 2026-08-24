@@ -1,4 +1,4 @@
-codeunit 50006 "DD Agent Factory" implements IAgentFactory
+codeunit 72930456 "Agent Factory_TSA_TSL" implements IAgentFactory
 {
     Access = Internal;
     InherentEntitlements = X;
@@ -11,7 +11,7 @@ codeunit 50006 "DD Agent Factory" implements IAgentFactory
 
     procedure GetFirstTimeSetupPageId(): Integer
     begin
-        exit(Page::"DD Agent Setup");
+        exit(Page::"Agent Setup_TSA_TSL");
     end;
 
     procedure ShowCanCreateAgent(): Boolean
@@ -22,16 +22,16 @@ codeunit 50006 "DD Agent Factory" implements IAgentFactory
 
     procedure GetCopilotCapability(): Enum "Copilot Capability"
     begin
-        exit(Enum::"Copilot Capability"::"Data Debugger Agent");
+        exit(Enum::"Copilot Capability"::"Troubleshoot Agent_TSA_TSL");
     end;
 
     procedure GetDefaultProfile(var TempAllProfile: Record "All Profile" temporary)
     var
         ModuleInfo: ModuleInfo;
     begin
-        // Default the agent to the dedicated Data Debugger Agent role center.
+        // Default the agent to the dedicated Troubleshooting Assistance Agent role center.
         NavApp.GetCurrentModuleInfo(ModuleInfo);
-        TempAllProfile."Profile ID" := 'DD Agent Profile';
+        TempAllProfile."Profile ID" := 'Agent Profile_TSA_TSL';
         TempAllProfile."App ID" := ModuleInfo.Id();
         TempAllProfile.Insert();
     end;
@@ -40,10 +40,10 @@ codeunit 50006 "DD Agent Factory" implements IAgentFactory
     var
         ModuleInfo: ModuleInfo;
     begin
-        // Grant the agent the Data Debugger permission set so it can read the captured data and open
-        // the Data Debugger pages.
+        // Grant the agent the Troubleshooting Assistance permission set so it can read the captured data and open
+        // the Troubleshooting Assistance pages.
         NavApp.GetCurrentModuleInfo(ModuleInfo);
-        TempAccessControlBuffer."Role ID" := 'GeneratedPermission';
+        TempAccessControlBuffer."Role ID" := 'Full Access_TSA_TSL';
         TempAccessControlBuffer."App ID" := ModuleInfo.Id();
         TempAccessControlBuffer.Scope := TempAccessControlBuffer.Scope::System;
         TempAccessControlBuffer.Insert();

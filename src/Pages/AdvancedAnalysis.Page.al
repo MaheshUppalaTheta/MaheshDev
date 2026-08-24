@@ -1,8 +1,8 @@
-page 50008 "DD Advanced Analysis"
+page 72930458 "Advanced Analysis_TSA_TSL"
 {
     Caption = 'Advanced Analysis';
     PageType = List;
-    SourceTable = "Data Debugger Analysis Buffer";
+    SourceTable = "Analysis Buffer_TSA_TSL";
     SourceTableTemporary = true;
     Editable = false;
     ApplicationArea = All;
@@ -192,9 +192,9 @@ page 50008 "DD Advanced Analysis"
     }
 
     var
-        SourceChangeBuffer: Record "Data Debugger Change Buffer" temporary;
-        OriginalAnalysisBuffer: Record "Data Debugger Analysis Buffer" temporary;
-        AnalysisEngine: Codeunit "Data Debugger Analysis Engine";
+        SourceChangeBuffer: Record "Change Buffer_TSA_TSL" temporary;
+        OriginalAnalysisBuffer: Record "Analysis Buffer_TSA_TSL" temporary;
+        AnalysisEngine: Codeunit "Analysis Engine_TSA_TSL";
         TotalIssues: Integer;
         CriticalIssues: Integer;
         WarningIssues: Integer;
@@ -203,7 +203,7 @@ page 50008 "DD Advanced Analysis"
         SeverityFilter: Option " ","Info","Warning","Critical";
         CategoryFilter: Text[50];
 
-    procedure SetSourceData(var ChangeBuffer: Record "Data Debugger Change Buffer")
+    procedure SetSourceData(var ChangeBuffer: Record "Change Buffer_TSA_TSL")
     begin
         SourceChangeBuffer.Reset();
         SourceChangeBuffer.DeleteAll();
@@ -307,7 +307,7 @@ page 50008 "DD Advanced Analysis"
         CurrPage.Update(false);
     end;
 
-    local procedure MatchesFilters(AnalysisRec: Record "Data Debugger Analysis Buffer"): Boolean
+    local procedure MatchesFilters(AnalysisRec: Record "Analysis Buffer_TSA_TSL"): Boolean
     begin
         // Analysis type filter
         if AnalysisTypeFilter <> AnalysisTypeFilter::" " then begin
@@ -396,7 +396,7 @@ page 50008 "DD Advanced Analysis"
         ExcelBuffer.CreateNewBook('Advanced Analysis Results');
         ExcelBuffer.WriteSheet('Analysis', CompanyName(), UserId());
         ExcelBuffer.CloseBook();
-        ExcelBuffer.SetFriendlyFilename('DataDebuggerAnalysis_' + Format(CurrentDateTime(), 0, '<Year4><Month,2><Day,2>_<Hours24><Minutes,2>'));
+        ExcelBuffer.SetFriendlyFilename('TroubleshootingAssistanceAnalysis_' + Format(CurrentDateTime(), 0, '<Year4><Month,2><Day,2>_<Hours24><Minutes,2>'));
         ExcelBuffer.OpenExcel();
 
         Message('Analysis results exported to Excel successfully.');

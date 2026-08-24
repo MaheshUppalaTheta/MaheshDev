@@ -1,4 +1,4 @@
-enum 50003 "Data Debugger Analysis Type"
+enum 72930451 "Analysis Type_TSA_TSL"
 {
     Extensible = true;
 

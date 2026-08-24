@@ -1,21 +1,21 @@
-permissionset 50001 "DD-Reader"
+permissionset 72930451 "Reader_TSA_TSL"
 {
-    Caption = 'Data Debugger - Reader';
+    Caption = 'Troubleshooting Assistance - Reader';
     Assignable = true;
     Permissions =
-        tabledata "Data Debugger Change Buffer" = R,
-        tabledata "Data Debugger Analysis Buffer" = R,
-        tabledata "Data Debugger Live Stats" = R,
-        tabledata "DD Table Pick Buffer" = R,
-        tabledata "DD Field Selection Buffer" = R,
-        page "Data Debugger" = X,
-        page "Data Debugger Results" = X,
-        page "Data Debugger Field Changes" = X,
-        page "Data Debugger Context Details" = X,
-        page "Data Debugger Table Summary" = X,
-        page "Data Debugger Transactions" = X,
-        page "Data Debugger Live Stats" = X,
-        page "DD Advanced Analysis" = X,
-        page "DD Change Entry Preview" = X,
-        page "DD Change Entry API" = X;
+        tabledata "Change Buffer_TSA_TSL" = R,
+        tabledata "Analysis Buffer_TSA_TSL" = R,
+        tabledata "Live Stats_TSA_TSL" = R,
+        tabledata "Table Pick Buffer_TSA_TSL" = R,
+        tabledata "Field Select Buffer_TSA_TSL" = R,
+        page "Troubleshooting_TSA_TSL" = X,
+        page "Results_TSA_TSL" = X,
+        page "Field Changes_TSA_TSL" = X,
+        page "Context Details_TSA_TSL" = X,
+        page "Table Summary_TSA_TSL" = X,
+        page "Transactions_TSA_TSL" = X,
+        page "Live Stats_TSA_TSL" = X,
+        page "Advanced Analysis_TSA_TSL" = X,
+        page "Change Entry Preview_TSA_TSL" = X,
+        page "Change Entry API_TSA_TSL" = X;
 }

@@ -1,17 +1,17 @@
-page 50110 "DD Change Entry Preview"
+page 72930464 "Change Entry Preview_TSA_TSL"
 {
-    // The agent-facing list of captured changes, surfaced from the DD Agent Role Center.
+    // The agent-facing list of captured changes, surfaced from the Agent Role Center_TSA_TSL.
     // Old/New values and the call stack are exposed as COLUMNS (populated in OnAfterGetRecord),
     // not as actions, so the agent can read them directly without invoking an action per row.
     PageType = List;
-    Caption = 'Data Debugger Change Entries';
-    SourceTable = "Data Debugger Change Buffer";
+    Caption = 'Troubleshooting Assistance Change Entries';
+    SourceTable = "Change Buffer_TSA_TSL";
     ApplicationArea = All;
     UsageCategory = Lists;
     Editable = false;
     SourceTableView = sorting("Entry No.") order(descending);
-    AboutTitle = 'Data Debugger Change Entries';
-    AboutText = 'Database changes captured by the Data Debugger, including user/session context and the old/new values and call stack as readable columns.';
+    AboutTitle = 'Troubleshooting Assistance Change Entries';
+    AboutText = 'Database changes captured by Troubleshooting Assistance, including user/session context and the old/new values and call stack as readable columns.';
 
     layout
     {
@@ -110,13 +110,13 @@ page 50110 "DD Change Entry Preview"
             action(DiagnoseWithAgent)
             {
                 Caption = 'Diagnose Latest Run with Agent';
-                ToolTip = 'Create an agent task asking the Data Debugger Agent to analyze the most recent recording run and report the likely root cause.';
+                ToolTip = 'Create an agent task asking the Troubleshooting Assistance Agent to analyze the most recent recording run and report the likely root cause.';
                 Image = Sparkle;
                 ApplicationArea = All;
 
                 trigger OnAction()
                 var
-                    AgentDiagnose: Codeunit "DD Agent Diagnose";
+                    AgentDiagnose: Codeunit "Agent Diagnose_TSA_TSL";
                 begin
                     AgentDiagnose.DiagnoseLatestRun();
                 end;

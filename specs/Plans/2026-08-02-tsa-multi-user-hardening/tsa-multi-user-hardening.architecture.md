@@ -1,4 +1,4 @@
-# Architecture Document: Data Debugger Multi-User Hardening
+# Architecture Document: Trouble Shooting Assitance Multi-User Hardening
 
 Date: 2026-08-02
 Complexity: HIGH
@@ -8,7 +8,7 @@ Status: Approved
 > Skills applied: None (general architecture patterns only)
 
 ## 1. Executive Summary
-This architecture hardens the Data Debugger extension for true multi-user recording (User A starts recording, User B's operations are captured), while prioritizing AppSource readiness and operational safety. The focus is on correctness, privacy classification, permissions, release hygiene, and resilient cross-session behavior.
+This architecture hardens the Trouble Shooting Assitance extension for true multi-user recording (User A starts recording, User B's operations are captured), while prioritizing AppSource readiness and operational safety. The focus is on correctness, privacy classification, permissions, release hygiene, and resilient cross-session behavior.
 
 ## 2. Business Objectives
 - Preserve core product behavior: true multi-user recording remains supported and reliable.
@@ -145,17 +145,17 @@ This architecture hardens the Data Debugger extension for true multi-user record
 ## 14. Spec Decomposition
 This requirement is best implemented with 3 linked technical specs:
 
-### Spec A: data-debugger-hardening-core
+### Spec A: tsa-hardening-core
 - Scope: capture/session codeunits, transaction summaries, state initialization, runtime correctness.
 - Dependencies: none.
 - Estimated phases: 2.
 
-### Spec B: data-debugger-hardening-compliance
+### Spec B: tsa-hardening-compliance
 - Scope: table field classifications, app metadata, release exposure settings.
 - Dependencies: none.
 - Estimated phases: 1.
 
-### Spec C: data-debugger-hardening-security-tests
+### Spec C: tsa-hardening-security-tests
 - Scope: permission sets, test segregation and expanded regressions.
 - Dependencies: A and B complete.
 - Estimated phases: 2.

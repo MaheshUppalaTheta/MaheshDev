@@ -1,4 +1,4 @@
-codeunit 50142 "DD Hardening Tests"
+codeunit 72930463 "Hardening Tests_TSA_TSL"
 {
     // Regression tests for the security-and-correctness hardening delivered in Spec C:
     //   - Multi-user gate (user filter works in both directions)
@@ -21,8 +21,8 @@ codeunit 50142 "DD Hardening Tests"
     procedure MultiUser_OtherUser_NotCaptured()
     var
         Customer: Record Customer;
-        ResultBuffer: Record "Data Debugger Change Buffer" temporary;
-        SessionManager: Codeunit "Data Debugger Session Manager";
+        ResultBuffer: Record "Change Buffer_TSA_TSL" temporary;
+        SessionManager: Codeunit "Session Manager_TSA_TSL";
         FakeUserId: Guid;
     begin
         // [SCENARIO] A recording targeted at a DIFFERENT user does not capture the current
@@ -50,8 +50,8 @@ codeunit 50142 "DD Hardening Tests"
     procedure MultiUser_CurrentUser_Captured()
     var
         Customer: Record Customer;
-        ResultBuffer: Record "Data Debugger Change Buffer" temporary;
-        SessionManager: Codeunit "Data Debugger Session Manager";
+        ResultBuffer: Record "Change Buffer_TSA_TSL" temporary;
+        SessionManager: Codeunit "Session Manager_TSA_TSL";
     begin
         // [SCENARIO] A recording explicitly targeted at UserSecurityId() captures the current
         // session's changes. Confirms the positive path of the multi-user gate.
@@ -68,7 +68,7 @@ codeunit 50142 "DD Hardening Tests"
         // [THEN] A Modify entry for Customer is captured
         SessionManager.GetChanges(ResultBuffer);
         ResultBuffer.SetRange("Table ID", Database::Customer);
-        ResultBuffer.SetRange("Change Type", "Data Debugger Change Type"::Modify);
+        ResultBuffer.SetRange("Change Type", "Change Type_TSA_TSL"::Modify);
         AssertTrue(not ResultBuffer.IsEmpty(), 'Expected a captured Modify entry for the current user.');
 
         StopForTest();
@@ -83,8 +83,8 @@ codeunit 50142 "DD Hardening Tests"
     procedure TableScope_Whitelist_UnlistedTableIgnored()
     var
         Customer: Record Customer;
-        ResultBuffer: Record "Data Debugger Change Buffer" temporary;
-        SessionManager: Codeunit "Data Debugger Session Manager";
+        ResultBuffer: Record "Change Buffer_TSA_TSL" temporary;
+        SessionManager: Codeunit "Session Manager_TSA_TSL";
     begin
         // [SCENARIO] When scope is "Only Selected Tables" and Vendor is the only listed table,
         // modifying Customer is not captured (Customer is not in the whitelist).
@@ -92,7 +92,7 @@ codeunit 50142 "DD Hardening Tests"
         EnsureCustomer(Customer);
 
         // [GIVEN] Scope = Only Selected Tables; only Vendor (23) in the filter list
-        SetCaptureScope("DD Capture Scope"::"Only Selected Tables");
+        SetCaptureScope("Capture Scope_TSA_TSL"::"Only Selected Tables");
         AddTableFilter(Database::Vendor);
         // StartRecording calls FilterManager.ReloadSetup() so the new scope takes effect.
         SessionManager.StartRecording(UserSecurityId(), CopyStr(UserId(), 1, 50), 'Current User');
@@ -114,8 +114,8 @@ codeunit 50142 "DD Hardening Tests"
     procedure TableScope_Blacklist_ListedTableIgnored()
     var
         Customer: Record Customer;
-        ResultBuffer: Record "Data Debugger Change Buffer" temporary;
-        SessionManager: Codeunit "Data Debugger Session Manager";
+        ResultBuffer: Record "Change Buffer_TSA_TSL" temporary;
+        SessionManager: Codeunit "Session Manager_TSA_TSL";
     begin
         // [SCENARIO] When scope is "All Except Selected Tables" and Customer is in the list,
         // modifying Customer is not captured (blacklisted).
@@ -123,7 +123,7 @@ codeunit 50142 "DD Hardening Tests"
         EnsureCustomer(Customer);
 
         // [GIVEN] Scope = All Except Selected Tables; Customer (18) is blacklisted
-        SetCaptureScope("DD Capture Scope"::"All Except Selected Tables");
+        SetCaptureScope("Capture Scope_TSA_TSL"::"All Except Selected Tables");
         AddTableFilter(Database::Customer);
         SessionManager.StartRecording(UserSecurityId(), CopyStr(UserId(), 1, 50), 'Current User');
 
@@ -148,8 +148,8 @@ codeunit 50142 "DD Hardening Tests"
     procedure FieldFilter_WithSelection_CaptureNotBlocked()
     var
         Customer: Record Customer;
-        ResultBuffer: Record "Data Debugger Change Buffer" temporary;
-        SessionManager: Codeunit "Data Debugger Session Manager";
+        ResultBuffer: Record "Change Buffer_TSA_TSL" temporary;
+        SessionManager: Codeunit "Session Manager_TSA_TSL";
     begin
         // [SCENARIO] Enabling field selection for Customer (selecting Name) does not prevent the
         // change entry from being created when Name is modified. Field selection controls the JSON
@@ -168,7 +168,7 @@ codeunit 50142 "DD Hardening Tests"
         // [THEN] The change is still captured (field selection does not block entry creation)
         SessionManager.GetChanges(ResultBuffer);
         ResultBuffer.SetRange("Table ID", Database::Customer);
-        ResultBuffer.SetRange("Change Type", "Data Debugger Change Type"::Modify);
+        ResultBuffer.SetRange("Change Type", "Change Type_TSA_TSL"::Modify);
         AssertTrue(not ResultBuffer.IsEmpty(), 'Expected Customer Modify capture to succeed when the modified field is in the field selection.');
 
         StopForTest();
@@ -183,8 +183,8 @@ codeunit 50142 "DD Hardening Tests"
     procedure Throttle_Enabled_UnderLimit_AllCaptured()
     var
         Customer: Record Customer;
-        ResultBuffer: Record "Data Debugger Change Buffer" temporary;
-        SessionManager: Codeunit "Data Debugger Session Manager";
+        ResultBuffer: Record "Change Buffer_TSA_TSL" temporary;
+        SessionManager: Codeunit "Session Manager_TSA_TSL";
         ChangeIndex: Integer;
     begin
         // [SCENARIO] With throttle enabled and MaxCapturesPerSecond well above the number of
@@ -207,7 +207,7 @@ codeunit 50142 "DD Hardening Tests"
         // [THEN] All 3 changes are captured (throttle did not suppress any)
         SessionManager.GetChanges(ResultBuffer);
         ResultBuffer.SetRange("Table ID", Database::Customer);
-        ResultBuffer.SetRange("Change Type", "Data Debugger Change Type"::Modify);
+        ResultBuffer.SetRange("Change Type", "Change Type_TSA_TSL"::Modify);
         AssertTrue(ResultBuffer.Count() = 3, 'Expected all 3 changes captured when throttle limit is not reached.');
 
         StopForTest();
@@ -219,11 +219,11 @@ codeunit 50142 "DD Hardening Tests"
 
     local procedure Initialize()
     var
-        State: Record "DD Recording State";
-        ChangeBuffer: Record "Data Debugger Change Buffer";
-        TableFilter: Record "Data Debugger Table Filter";
-        FieldSelection: Record "DD Field Selection Buffer";
-        Setup: Record "Data Debugger Setup";
+        State: Record "Recording State_TSA_TSL";
+        ChangeBuffer: Record "Change Buffer_TSA_TSL";
+        TableFilter: Record "Table Filter_TSA_TSL";
+        FieldSelection: Record "Field Select Buffer_TSA_TSL";
+        Setup: Record "Setup_TSA_TSL";
         Customer: Record Customer;
     begin
         if State.Get('') then begin
@@ -253,7 +253,7 @@ codeunit 50142 "DD Hardening Tests"
 
     local procedure StopForTest()
     var
-        State: Record "DD Recording State";
+        State: Record "Recording State_TSA_TSL";
     begin
         if State.Get('') then begin
             State."Is Recording" := false;
@@ -261,9 +261,9 @@ codeunit 50142 "DD Hardening Tests"
         end;
     end;
 
-    local procedure SetCaptureScope(Scope: Enum "DD Capture Scope")
+    local procedure SetCaptureScope(Scope: Enum "Capture Scope_TSA_TSL")
     var
-        Setup: Record "Data Debugger Setup";
+        Setup: Record "Setup_TSA_TSL";
     begin
         if not Setup.Get('') then begin
             Setup.Init();
@@ -275,7 +275,7 @@ codeunit 50142 "DD Hardening Tests"
 
     local procedure AddTableFilter(TableId: Integer)
     var
-        TableFilter: Record "Data Debugger Table Filter";
+        TableFilter: Record "Table Filter_TSA_TSL";
     begin
         TableFilter.Init();
         TableFilter."Table ID" := TableId;
@@ -285,7 +285,7 @@ codeunit 50142 "DD Hardening Tests"
 
     local procedure AddFieldSelection(TableId: Integer; FieldNo: Integer; FieldName: Text[30])
     var
-        FieldSelection: Record "DD Field Selection Buffer";
+        FieldSelection: Record "Field Select Buffer_TSA_TSL";
     begin
         FieldSelection.Init();
         FieldSelection."Table ID" := TableId;
@@ -297,7 +297,7 @@ codeunit 50142 "DD Hardening Tests"
 
     local procedure SetThrottle(MaxPerSecond: Integer)
     var
-        Setup: Record "Data Debugger Setup";
+        Setup: Record "Setup_TSA_TSL";
     begin
         if not Setup.Get('') then begin
             Setup.Init();

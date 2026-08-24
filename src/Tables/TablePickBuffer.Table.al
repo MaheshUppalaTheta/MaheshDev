@@ -1,6 +1,6 @@
-table 50006 "DD Table Pick Buffer"
+table 72930456 "Table Pick Buffer_TSA_TSL"
 {
-    Caption = 'DD Table Pick Buffer';
+    Caption = 'Troubleshooting Assistance Table Pick Buffer';
     TableType = Temporary;
     DataClassification = SystemMetadata;
 

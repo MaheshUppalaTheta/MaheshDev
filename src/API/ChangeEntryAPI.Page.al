@@ -1,20 +1,20 @@
-page 50100 "DD Change Entry API"
+page 72930463 "Change Entry API_TSA_TSL"
 {
     PageType = API;
-    Caption = 'Data Debugger Change Entry';
+    Caption = 'Troubleshooting Assistance Change Entry';
     APIPublisher = 'theta';
-    APIGroup = 'dataDebugger';
+    APIGroup = 'troubleshootingAssistance';
     APIVersion = 'v1.0';
     EntityName = 'changeEntry';
     EntitySetName = 'changeEntries';
-    SourceTable = "Data Debugger Change Buffer";
+    SourceTable = "Change Buffer_TSA_TSL";
     ODataKeyFields = SystemId;
     DelayedInsert = true;
     Editable = false;
     InsertAllowed = false;
     ModifyAllowed = false;
     DeleteAllowed = false;
-    AboutText = 'API endpoint exposing change entries captured by the Data Debugger. Each entry represents a change to a record in the system, including metadata such as the user who made the change, the time of change, and the old/new values.';
+    AboutText = 'API endpoint exposing change entries captured by Troubleshooting Assistance. Each entry represents a change to a record in the system, including metadata such as the user who made the change, the time of change, and the old/new values.';
     layout
     {
         area(Content)

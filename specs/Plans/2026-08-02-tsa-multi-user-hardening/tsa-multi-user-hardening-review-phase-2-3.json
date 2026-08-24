@@ -14,7 +14,7 @@
       "source": "bcquality",
       "actionable": true,
       "status": "FIXED",
-      "message": "The 'Transaction ID' field (Rec.Name) on the Data Debugger Transactions page had no ToolTip property.",
+      "message": "The 'Transaction ID' field (Rec.Name) on the Trouble Shooting Assitance Transactions page had no ToolTip property.",
       "location": "src/Pages/DataDebuggerTransactions.Page.al:16",
       "fix-hint": "Added ToolTip = 'The unique identifier of the database transaction that grouped these changes.'; inside the field block.",
       "references": ["microsoft/knowledge/style/tooltip-required-on-page-fields.md"]
@@ -36,7 +36,7 @@
       "source": "native",
       "actionable": true,
       "status": "DEFERRED",
-      "message": "The page-global variable SessionStartTime (DateTime) declared on the Data Debugger Transactions page is never assigned. SetData() signature does not accept StartTime, so drill-through Results page always shows epoch (0DT) as recording start time.",
+      "message": "The page-global variable SessionStartTime (DateTime) declared on the Trouble Shooting Assitance Transactions page is never assigned. SetData() signature does not accept StartTime, so drill-through Results page always shows epoch (0DT) as recording start time.",
       "location": "src/Pages/DataDebuggerTransactions.Page.al:70",
       "fix-hint": "Extend SetData's signature to accept StartTime: DateTime, assign SessionStartTime := StartTime, update all call sites.",
       "references": []
@@ -47,7 +47,7 @@
       "source": "native",
       "actionable": true,
       "status": "DEFERRED",
-      "message": "The 'var SourceBuffer: Record Data Debugger Change Buffer' parameter in SetData() is never read inside the procedure body. The implementation re-queries the database by RunId.",
+      "message": "The 'var SourceBuffer: Record Trouble Shooting Assitance Change Buffer' parameter in SetData() is never read inside the procedure body. The implementation re-queries the database by RunId.",
       "location": "src/Pages/DataDebuggerTransactions.Page.al:81",
       "fix-hint": "Either (a) remove the SourceBuffer parameter and document the page is for post-stop analysis only, or (b) iterate SourceBuffer for grouping instead of re-querying.",
       "references": []
@@ -69,7 +69,7 @@
       "source": "bcquality",
       "actionable": true,
       "status": "FIXED",
-      "message": "Field 7 'Primary Key' (Text[500]) in Data Debugger Change Buffer stores actual primary key values of captured tables (can contain customer-entered data). CustomerContent is more accurate than the inherited SystemMetadata.",
+      "message": "Field 7 'Primary Key' (Text[500]) in Trouble Shooting Assitance Change Buffer stores actual primary key values of captured tables (can contain customer-entered data). CustomerContent is more accurate than the inherited SystemMetadata.",
       "location": "src/Tables/DataDebuggerChangeBuffer.Table.al:38",
       "fix-hint": "Added DataClassification = CustomerContent; inside field(7; 'Primary Key'; Text[500]).",
       "references": ["microsoft/knowledge/privacy/data-classification-required-on-pii-fields.md"]

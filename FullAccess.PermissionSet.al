@@ -1,7 +1,7 @@
-permissionset 50000 GeneratedPermission
+permissionset 72930450 "Full Access_TSA_TSL"
 {
-    Caption = 'Data Debugger (use DD-Reader / DD-Operator / DD-Admin)';
-    // Backward-compatible alias. Assign DD-Reader, DD-Operator, or DD-Admin instead.
+    Caption = 'Troubleshooting Assistance - Full Access (prefer Reader_TSA_TSL / Operator_TSA_TSL / Admin_TSA_TSL)';
+    // Backward-compatible alias. Assign Reader_TSA_TSL, Operator_TSA_TSL, or Admin_TSA_TSL instead.
     Assignable = true;
-    IncludedPermissionSets = "DD-Admin";
+    IncludedPermissionSets = "Admin_TSA_TSL";
 }

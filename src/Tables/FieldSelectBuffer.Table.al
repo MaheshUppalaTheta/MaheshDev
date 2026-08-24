@@ -1,6 +1,6 @@
-table 50005 "DD Field Selection Buffer"
+table 72930455 "Field Select Buffer_TSA_TSL"
 {
-    Caption = 'Data Debugger Table Filter Field';
+    Caption = 'Troubleshooting Assistance Table Filter Field';
     DataClassification = SystemMetadata;
 
     fields

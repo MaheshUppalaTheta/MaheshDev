@@ -1,8 +1,8 @@
-enumextension 50007 "DD Agent Copilot Capability" extends "Copilot Capability"
+enumextension 72930451 "Agent Copilot Cap_TSA_TSL" extends "Copilot Capability"
 {
-    // The Copilot capability that acts as the feature switch / overview for the Data Debugger agent.
-    value(50101; "Data Debugger Agent")
+    // The Copilot capability that acts as the feature switch / overview for the Troubleshooting Assistance agent.
+    value(72930450; "Troubleshoot Agent_TSA_TSL")
     {
-        Caption = 'Data Debugger Agent';
+        Caption = 'Troubleshooting Assistance Agent';
     }
 }

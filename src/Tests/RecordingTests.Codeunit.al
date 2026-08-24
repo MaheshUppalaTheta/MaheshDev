@@ -1,6 +1,6 @@
-codeunit 50140 "DD Recording Tests"
+codeunit 72930461 "Recording Tests_TSA_TSL"
 {
-    // Automated tests for Data Debugger user-based recording.
+    // Automated tests for Troubleshooting Assistance user-based recording.
     //
     // Run under the BC test runner (AL Test Tool / AL Test Runner extension, or headless via
     // BcContainerHelper in CI). They exercise the real capture path: start a recording, write to a
@@ -21,8 +21,8 @@ codeunit 50140 "DD Recording Tests"
     procedure CapturesModifyForRecordedUser()
     var
         Customer: Record Customer;
-        ResultBuffer: Record "Data Debugger Change Buffer" temporary;
-        SessionManager: Codeunit "Data Debugger Session Manager";
+        ResultBuffer: Record "Change Buffer_TSA_TSL" temporary;
+        SessionManager: Codeunit "Session Manager_TSA_TSL";
         RunId: Guid;
     begin
         // [SCENARIO] Recording the current user and modifying a Customer is captured.
@@ -40,7 +40,7 @@ codeunit 50140 "DD Recording Tests"
         // independent of the capture mode (in-memory vs direct-to-table).
         SessionManager.GetChanges(ResultBuffer);
         ResultBuffer.SetRange("Table ID", Database::Customer);
-        ResultBuffer.SetRange("Change Type", "Data Debugger Change Type"::Modify);
+        ResultBuffer.SetRange("Change Type", "Change Type_TSA_TSL"::Modify);
         AssertTrue(not ResultBuffer.IsEmpty(), 'Expected a captured Modify entry for Customer, found none.');
 
         StopForTest();
@@ -51,8 +51,8 @@ codeunit 50140 "DD Recording Tests"
     procedure CapturesInsertForRecordedUser()
     var
         Customer: Record Customer;
-        ResultBuffer: Record "Data Debugger Change Buffer" temporary;
-        SessionManager: Codeunit "Data Debugger Session Manager";
+        ResultBuffer: Record "Change Buffer_TSA_TSL" temporary;
+        SessionManager: Codeunit "Session Manager_TSA_TSL";
         RunId: Guid;
     begin
         // [SCENARIO] Inserting a record while recording the current user is captured.
@@ -69,7 +69,7 @@ codeunit 50140 "DD Recording Tests"
         // [THEN] An Insert entry for the Customer table exists in this run
         SessionManager.GetChanges(ResultBuffer);
         ResultBuffer.SetRange("Table ID", Database::Customer);
-        ResultBuffer.SetRange("Change Type", "Data Debugger Change Type"::Insert);
+        ResultBuffer.SetRange("Change Type", "Change Type_TSA_TSL"::Insert);
         AssertTrue(not ResultBuffer.IsEmpty(), 'Expected a captured Insert entry for Customer, found none.');
 
         StopForTest();
@@ -80,8 +80,8 @@ codeunit 50140 "DD Recording Tests"
     procedure IgnoresChangesFromOtherUsers()
     var
         Customer: Record Customer;
-        ResultBuffer: Record "Data Debugger Change Buffer" temporary;
-        SessionManager: Codeunit "Data Debugger Session Manager";
+        ResultBuffer: Record "Change Buffer_TSA_TSL" temporary;
+        SessionManager: Codeunit "Session Manager_TSA_TSL";
         OtherUserSecurityId: Guid;
         RunId: Guid;
     begin
@@ -108,7 +108,7 @@ codeunit 50140 "DD Recording Tests"
     procedure CapturesNothingWhenNotRecording()
     var
         Customer: Record Customer;
-        ChangeBuffer: Record "Data Debugger Change Buffer";
+        ChangeBuffer: Record "Change Buffer_TSA_TSL";
     begin
         // [SCENARIO] With no active recording, database changes are not captured.
         // (No StartRecording -> no Message -> intentionally no MessageHandler.)
@@ -132,8 +132,8 @@ codeunit 50140 "DD Recording Tests"
     procedure NormalProcess_StopPersistsToRealTable()
     var
         Customer: Record Customer;
-        ChangeBuffer: Record "Data Debugger Change Buffer";
-        SessionManager: Codeunit "Data Debugger Session Manager";
+        ChangeBuffer: Record "Change Buffer_TSA_TSL";
+        SessionManager: Codeunit "Session Manager_TSA_TSL";
         RunId: Guid;
     begin
         // [SCENARIO] A normal (no error) recording: after Stop the captures are persisted in the
@@ -164,9 +164,9 @@ codeunit 50140 "DD Recording Tests"
     procedure RollbackSafe_CapturesSurviveProcessError()
     var
         Customer: Record Customer;
-        ResultBuffer: Record "Data Debugger Change Buffer" temporary;
-        SessionManager: Codeunit "Data Debugger Session Manager";
-        ErrorRunner: Codeunit "DD Test Error Runner";
+        ResultBuffer: Record "Change Buffer_TSA_TSL" temporary;
+        SessionManager: Codeunit "Session Manager_TSA_TSL";
+        ErrorRunner: Codeunit "Test Error Runner_TSA_TSL";
         RunId: Guid;
     begin
         // [SCENARIO] In rollback-safe mode (default), a process that modifies then errors gets its
@@ -186,7 +186,7 @@ codeunit 50140 "DD Recording Tests"
         // [THEN] ...but the capture survived in the in-memory buffer
         SessionManager.GetChanges(ResultBuffer);
         ResultBuffer.SetRange("Table ID", Database::Customer);
-        ResultBuffer.SetRange("Change Type", "Data Debugger Change Type"::Modify);
+        ResultBuffer.SetRange("Change Type", "Change Type_TSA_TSL"::Modify);
         AssertTrue(not ResultBuffer.IsEmpty(), 'Rollback-safe capture should survive a rolled-back process.');
 
         StopForTest();
@@ -197,9 +197,9 @@ codeunit 50140 "DD Recording Tests"
     procedure ErrorThenStop_PersistsSurvivingCaptures()
     var
         Customer: Record Customer;
-        ChangeBuffer: Record "Data Debugger Change Buffer";
-        SessionManager: Codeunit "Data Debugger Session Manager";
-        ErrorRunner: Codeunit "DD Test Error Runner";
+        ChangeBuffer: Record "Change Buffer_TSA_TSL";
+        SessionManager: Codeunit "Session Manager_TSA_TSL";
+        ErrorRunner: Codeunit "Test Error Runner_TSA_TSL";
         RunId: Guid;
     begin
         // [SCENARIO] The full flow: rollback-safe recording, a process errors (rolls back), then
@@ -225,9 +225,9 @@ codeunit 50140 "DD Recording Tests"
     procedure DirectMode_CapturesLostOnProcessError()
     var
         Customer: Record Customer;
-        ResultBuffer: Record "Data Debugger Change Buffer" temporary;
-        SessionManager: Codeunit "Data Debugger Session Manager";
-        ErrorRunner: Codeunit "DD Test Error Runner";
+        ResultBuffer: Record "Change Buffer_TSA_TSL" temporary;
+        SessionManager: Codeunit "Session Manager_TSA_TSL";
+        ErrorRunner: Codeunit "Test Error Runner_TSA_TSL";
         RunId: Guid;
     begin
         // [SCENARIO] In direct mode, captures are written straight to the table and therefore roll
@@ -255,8 +255,8 @@ codeunit 50140 "DD Recording Tests"
 
     local procedure Initialize()
     var
-        State: Record "DD Recording State";
-        ChangeBuffer: Record "Data Debugger Change Buffer";
+        State: Record "Recording State_TSA_TSL";
+        ChangeBuffer: Record "Change Buffer_TSA_TSL";
     begin
         // Make every test independent: stop any recording, clear the persisted buffer, and reset
         // the capture mode to the rollback-safe default.
@@ -271,7 +271,7 @@ codeunit 50140 "DD Recording Tests"
 
     local procedure StopForTest()
     var
-        State: Record "DD Recording State";
+        State: Record "Recording State_TSA_TSL";
     begin
         // Turn recording off without going through StopRecording (which shows a Message / flushes).
         if State.Get('') then begin
@@ -282,7 +282,7 @@ codeunit 50140 "DD Recording Tests"
 
     local procedure SetDirectCapture(Enable: Boolean)
     var
-        Setup: Record "Data Debugger Setup";
+        Setup: Record "Setup_TSA_TSL";
     begin
         Setup := Setup.GetSetup();
         Setup."Direct Database Capture" := Enable;
@@ -321,8 +321,8 @@ codeunit 50140 "DD Recording Tests"
     procedure ClientType_CapturedCorrectly()
     var
         Customer: Record Customer;
-        ResultBuffer: Record "Data Debugger Change Buffer" temporary;
-        SessionManager: Codeunit "Data Debugger Session Manager";
+        ResultBuffer: Record "Change Buffer_TSA_TSL" temporary;
+        SessionManager: Codeunit "Session Manager_TSA_TSL";
         RunId: Guid;
     begin
         // [SCENARIO] After capturing a change the Client Type reflects the actual session type,
@@ -341,7 +341,7 @@ codeunit 50140 "DD Recording Tests"
         // (test runner sessions are Background, not Client)
         SessionManager.GetChanges(ResultBuffer);
         ResultBuffer.SetRange("Table ID", Database::Customer);
-        ResultBuffer.SetRange("Change Type", "Data Debugger Change Type"::Modify);
+        ResultBuffer.SetRange("Change Type", "Change Type_TSA_TSL"::Modify);
         AssertTrue(not ResultBuffer.IsEmpty(), 'Expected a captured Modify entry for Client Type test.');
         if ResultBuffer.FindFirst() then begin
             AssertTrue(ResultBuffer."Client Type" <> '', 'Client Type must not be empty.');
@@ -356,8 +356,8 @@ codeunit 50140 "DD Recording Tests"
     procedure ModifyCapture_DoesNotThrow()
     var
         Customer: Record Customer;
-        ResultBuffer: Record "Data Debugger Change Buffer" temporary;
-        SessionManager: Codeunit "Data Debugger Session Manager";
+        ResultBuffer: Record "Change Buffer_TSA_TSL" temporary;
+        SessionManager: Codeunit "Session Manager_TSA_TSL";
         RunId: Guid;
     begin
         // [SCENARIO] The restructured xRecRef permission guard does not throw an exception on the
@@ -385,8 +385,8 @@ codeunit 50140 "DD Recording Tests"
     procedure TransactionGrouping_Setup_Valid()
     var
         Customer: Record Customer;
-        ResultBuffer: Record "Data Debugger Change Buffer" temporary;
-        SessionManager: Codeunit "Data Debugger Session Manager";
+        ResultBuffer: Record "Change Buffer_TSA_TSL" temporary;
+        SessionManager: Codeunit "Session Manager_TSA_TSL";
         RunId: Guid;
         I: Integer;
     begin
@@ -408,7 +408,7 @@ codeunit 50140 "DD Recording Tests"
         // [THEN] GetChanges returns exactly 3 Customer Modify entries
         SessionManager.GetChanges(ResultBuffer);
         ResultBuffer.SetRange("Table ID", Database::Customer);
-        ResultBuffer.SetRange("Change Type", "Data Debugger Change Type"::Modify);
+        ResultBuffer.SetRange("Change Type", "Change Type_TSA_TSL"::Modify);
         AssertTrue(ResultBuffer.Count() = 3, 'Expected exactly 3 captured Customer Modify entries for transaction grouping test.');
 
         StopForTest();

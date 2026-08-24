@@ -1,8 +1,8 @@
-# Spec B: Data Debugger Hardening Compliance
+# Spec B: Trouble Shooting Assitance Hardening Compliance
 
 Date: 2026-08-02
 Status: Approved
-Source Architecture: specs/Plans/2026-08-02-data-debugger-multi-user-hardening/data-debugger-multi-user-hardening.architecture.md
+Source Architecture: specs/Plans/2026-08-02-tsa-multi-user-hardening/tsa-multi-user-hardening.architecture.md
 Owner: AL Implementation Team
 
 ## 1. Goal

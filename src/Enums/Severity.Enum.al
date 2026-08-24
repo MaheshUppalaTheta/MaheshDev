@@ -1,4 +1,4 @@
-enum 50004 "Data Debugger Severity"
+enum 72930452 "Severity_TSA_TSL"
 {
     Extensible = true;
 

@@ -1,8 +1,8 @@
-page 50005 "Data Debugger Table Filters"
+page 72930455 "Table Filters_TSA_TSL"
 {
-    Caption = 'Data Debugger Table Filters';
+    Caption = 'Troubleshooting Assistance Table Filters';
     PageType = List;
-    SourceTable = "Data Debugger Table Filter";
+    SourceTable = "Table Filter_TSA_TSL";
     ApplicationArea = All;
 
     layout
@@ -44,7 +44,7 @@ page 50005 "Data Debugger Table Filters"
 
                 trigger OnAction()
                 var
-                    FieldSelection: Page "DD Field Selection";
+                    FieldSelection: Page "Field Selection_TSA_TSL";
                 begin
                     if Rec."Table ID" = 0 then begin
                         Message('Enter a Table ID first, then pick its fields.');
@@ -78,7 +78,7 @@ page 50005 "Data Debugger Table Filters"
 
     local procedure AddCommonSystemTables()
     var
-        TableFilter: Record "Data Debugger Table Filter";
+        TableFilter: Record "Table Filter_TSA_TSL";
         SystemTables: array[10] of Integer;
         i: Integer;
     begin
@@ -92,7 +92,7 @@ page 50005 "Data Debugger Table Filters"
         SystemTables[7] := 2000000168; // System Change Log
         SystemTables[8] := 2000000111; // User Session Log
         SystemTables[9] := 2000000067; // Scheduled Task
-        SystemTables[10] := 50000; // Data Debugger Change Buffer
+        SystemTables[10] := Database::"Change Buffer_TSA_TSL";
 
         for i := 1 to ArrayLen(SystemTables) do begin
             if SystemTables[i] <> 0 then begin

@@ -1,4 +1,4 @@
-codeunit 50009 "DD Agent Install"
+codeunit 72930459 "Agent Install_TSA_TSL"
 {
     Subtype = Install;
     Access = Internal;
@@ -12,8 +12,8 @@ codeunit 50009 "DD Agent Install"
 
     trigger OnInstallAppPerCompany()
     var
-        Setup: Record "Data Debugger Setup";
-        State: Record "DD Recording State";
+        Setup: Record "Setup_TSA_TSL";
+        State: Record "Recording State_TSA_TSL";
     begin
         if not Setup.Get('') then begin
             Setup.Init();
@@ -32,11 +32,11 @@ codeunit 50009 "DD Agent Install"
         CopilotCapability: Codeunit "Copilot Capability";
         LearnMoreUrlTxt: Label 'https://github.com/MaheshUppalaTheta/MaheshDev/blob/main/docs/getting-started.md', Locked = true;
     begin
-        // Make the Data Debugger agent visible on the Copilot & AI Capabilities page so an admin can
+        // Make the Troubleshooting Assistance agent visible on the Copilot & AI Capabilities page so an admin can
         // turn it on. Registration is idempotent.
-        if not CopilotCapability.IsCapabilityRegistered(Enum::"Copilot Capability"::"Data Debugger Agent") then
+        if not CopilotCapability.IsCapabilityRegistered(Enum::"Copilot Capability"::"Troubleshoot Agent_TSA_TSL") then
             CopilotCapability.RegisterCapability(
-                Enum::"Copilot Capability"::"Data Debugger Agent",
+                Enum::"Copilot Capability"::"Troubleshoot Agent_TSA_TSL",
                 Enum::"Copilot Availability"::Preview,
                 Enum::"Copilot Billing Type"::"Microsoft Billed",
                 LearnMoreUrlTxt);

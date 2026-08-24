@@ -1,8 +1,8 @@
-# Spec C: Data Debugger Hardening Security and Tests
+# Spec C: Trouble Shooting Assitance Hardening Security and Tests
 
 Date: 2026-08-02
 Status: Approved
-Source Architecture: specs/Plans/2026-08-02-data-debugger-multi-user-hardening/data-debugger-multi-user-hardening.architecture.md
+Source Architecture: specs/Plans/2026-08-02-tsa-multi-user-hardening/tsa-multi-user-hardening.architecture.md
 Owner: AL Implementation Team
 
 ## 1. Goal

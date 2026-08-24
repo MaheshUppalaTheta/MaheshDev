@@ -10,7 +10,7 @@ You are working on a Microsoft Dynamics 365 Business Central AL extension projec
 - Test codeunits: `Cod{ID}.{PascalCaseName}Tests.al`
 
 ## Object ID Ranges
-- Use IDs in range 50100–50199
+- Use IDs in range 72930450–72930499
 
 ## AL Best Practices
 - Always set `DataClassification` on every table field

@@ -1,9 +1,9 @@
-page 50013 "DD Agent Setup"
+page 72930462 "Agent Setup_TSA_TSL"
 {
     PageType = ConfigurationDialog;
     Extensible = false;
-    Caption = 'Data Debugger Agent Setup';
-    SourceTable = "DD Agent Cue";
+    Caption = 'Troubleshooting Assistance Agent Setup';
+    SourceTable = "Agent Cue_TSA_TSL";
     Editable = false;
     ApplicationArea = All;
 
@@ -13,8 +13,8 @@ page 50013 "DD Agent Setup"
         {
             group(Info)
             {
-                Caption = 'Data Debugger Agent';
-                InstructionalText = 'This agent reviews the database changes captured by the Data Debugger and diagnoses why a process failed. It reads the Data Debugger Change Entries page from its role center. Defaults (role center, permissions, instructions) are already configured.';
+                Caption = 'Troubleshooting Assistance Agent';
+                InstructionalText = 'This agent reviews the database changes captured by Troubleshooting Assistance and diagnoses why a process failed. It reads the Troubleshooting Assistance Change Entries page from its role center. Defaults (role center, permissions, instructions) are already configured.';
             }
             group(Stats)
             {

@@ -1,16 +1,16 @@
-page 50011 "DD Agent Role Center"
+page 72930460 "Agent Role Center_TSA_TSL"
 {
-    Caption = 'Data Debugger Agent';
+    Caption = 'Troubleshooting Assistance Agent';
     PageType = RoleCenter;
 
-    // Dedicated, minimal Role Center for the Data Debugger Agent. Keeping the surface small reduces
+    // Dedicated, minimal Role Center for the Troubleshooting Assistance Agent. Keeping the surface small reduces
     // contextual noise for the agent and — because agents navigate only via available actions and
-    // links (no Tell Me) — guarantees the agent can reach the Data Debugger Changes list.
+    // links (no Tell Me) — guarantees the agent can reach the Troubleshooting Assistance Changes list.
     layout
     {
         area(RoleCenter)
         {
-            part(Activities; "DD Agent Activities")
+            part(Activities; "Agent Activities_TSA_TSL")
             {
                 ApplicationArea = All;
             }
@@ -24,31 +24,31 @@ page 50011 "DD Agent Role Center"
         {
             action(ChangesEmbed)
             {
-                Caption = 'Data Debugger Changes';
-                ToolTip = 'View the database changes captured by the Data Debugger.';
-                RunObject = page "DD Change Entry Preview";
+                Caption = 'Troubleshooting Assistance Changes';
+                ToolTip = 'View the database changes captured by Troubleshooting Assistance.';
+                RunObject = page "Change Entry Preview_TSA_TSL";
                 ApplicationArea = All;
             }
         }
 
         area(Sections)
         {
-            group(DataDebugger)
+            group(TroubleshootingAssistance)
             {
-                Caption = 'Data Debugger';
+                Caption = 'Troubleshooting Assistance';
 
                 action(Changes)
                 {
-                    Caption = 'Data Debugger Changes';
-                    ToolTip = 'View the database changes captured by the Data Debugger.';
-                    RunObject = page "DD Change Entry Preview";
+                    Caption = 'Troubleshooting Assistance Changes';
+                    ToolTip = 'View the database changes captured by Troubleshooting Assistance.';
+                    RunObject = page "Change Entry Preview_TSA_TSL";
                     ApplicationArea = All;
                 }
                 action(ControlPanel)
                 {
-                    Caption = 'Data Debugger';
-                    ToolTip = 'Open the Data Debugger recording control panel.';
-                    RunObject = page "Data Debugger";
+                    Caption = 'Troubleshooting Assistance';
+                    ToolTip = 'Open the Troubleshooting Assistance recording control panel.';
+                    RunObject = page "Troubleshooting_TSA_TSL";
                     ApplicationArea = All;
                 }
             }

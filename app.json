@@ -1,10 +1,10 @@
 {
   "id": "fcd31dc9-7240-48cd-a991-ed43a5b7997f",
-  "name": "DataDebugger",
-  "publisher": "Default Publisher",
+  "name": "Trouble Shooting Assistance",
+  "publisher": "Theta Systems Limited",
   "version": "1.0.0.0",
   "brief": "Real-time multi-user database change capture and analysis for Business Central",
-  "description": "Data Debugger captures, groups, and analyses database changes in real time across all active sessions in Microsoft Dynamics 365 Business Central. Target a specific user, filter by table, and replay transaction sequences to diagnose data-flow issues, validate business logic, and investigate multi-user concurrency behaviour — without modifying base objects.",
+  "description": "Troubleshooting Assistance captures, groups, and analyses database changes in real time across all active sessions in Microsoft Dynamics 365 Business Central. Target a specific user, filter by table, and replay transaction sequences to diagnose data-flow issues, validate business logic, and investigate multi-user concurrency behaviour — without modifying base objects.",
   "privacyStatement": "https://github.com/MaheshUppalaTheta/MaheshDev/blob/main/docs/OVERVIEW.md",
   "EULA": "https://github.com/MaheshUppalaTheta/MaheshDev/blob/main/LICENSE",
   "help": "https://github.com/MaheshUppalaTheta/MaheshDev/blob/main/docs/getting-started.md",
@@ -16,8 +16,8 @@
   "application": "28.0.0.0",
   "idRanges": [
     {
-      "from": 50000,
-      "to": 50149
+      "from": 72930450,
+      "to": 72930499
     }
   ],
   "resourceExposurePolicy": {

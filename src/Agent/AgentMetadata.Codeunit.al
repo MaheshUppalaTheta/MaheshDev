@@ -1,4 +1,4 @@
-codeunit 50007 "DD Agent Metadata" implements IAgentMetadata
+codeunit 72930457 "Agent Metadata_TSA_TSL" implements IAgentMetadata
 {
     Access = Internal;
     InherentEntitlements = X;
@@ -11,13 +11,13 @@ codeunit 50007 "DD Agent Metadata" implements IAgentMetadata
 
     procedure GetSetupPageId(AgentUserId: Guid): Integer
     begin
-        exit(Page::"DD Agent Setup");
+        exit(Page::"Agent Setup_TSA_TSL");
     end;
 
     procedure GetSummaryPageId(AgentUserId: Guid): Integer
     begin
         // Hover KPIs for the agent (count cues).
-        exit(Page::"DD Agent Activities");
+        exit(Page::"Agent Activities_TSA_TSL");
     end;
 
     procedure GetAgentTaskMessagePageId(AgentUserId: Guid; MessageId: Guid): Integer

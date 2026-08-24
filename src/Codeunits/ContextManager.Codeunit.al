@@ -1,4 +1,4 @@
-codeunit 50003 "Data Debugger Context Manager"
+codeunit 72930453 "Context Manager_TSA_TSL"
 {
     SingleInstance = true;
 
@@ -7,7 +7,7 @@ codeunit 50003 "Data Debugger Context Manager"
         TransactionStartTime: DateTime;
         TransactionChangeCount: Integer;
 
-    procedure CaptureUserContext(var ChangeBuffer: Record "Data Debugger Change Buffer")
+    procedure CaptureUserContext(var ChangeBuffer: Record "Change Buffer_TSA_TSL")
     var
         UserSetup: Record "User Setup";
         User: Record User;
@@ -27,7 +27,7 @@ codeunit 50003 "Data Debugger Context Manager"
         ChangeBuffer."Client Type" := GetClientType();
     end;
 
-    procedure CaptureTransactionContext(var ChangeBuffer: Record "Data Debugger Change Buffer")
+    procedure CaptureTransactionContext(var ChangeBuffer: Record "Change Buffer_TSA_TSL")
     begin
         // Initialize transaction if not started
         if IsNullGuid(CurrentTransactionId) then
@@ -41,7 +41,7 @@ codeunit 50003 "Data Debugger Context Manager"
             StartNewTransaction();
     end;
 
-    procedure CaptureCallStack(var ChangeBuffer: Record "Data Debugger Change Buffer")
+    procedure CaptureCallStack(var ChangeBuffer: Record "Change Buffer_TSA_TSL")
     var
         CallStackText: Text;
     begin

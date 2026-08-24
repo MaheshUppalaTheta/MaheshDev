@@ -1,4 +1,4 @@
-page 50003 "Data Debugger Table Summary"
+page 72930453 "Table Summary_TSA_TSL"
 {
     Caption = 'Changes by Table';
     PageType = List;
@@ -46,8 +46,8 @@ page 50003 "Data Debugger Table Summary"
 
                 trigger OnAction()
                 var
-                    FilteredResultsPage: Page "Data Debugger Results";
-                    TempFilteredBuffer: Record "Data Debugger Change Buffer" temporary;
+                    FilteredResultsPage: Page "Results_TSA_TSL";
+                    TempFilteredBuffer: Record "Change Buffer_TSA_TSL" temporary;
                 begin
                     // Filter original data by selected table
                     OriginalData.Reset();
@@ -67,10 +67,10 @@ page 50003 "Data Debugger Table Summary"
     }
 
     var
-        OriginalData: Record "Data Debugger Change Buffer" temporary;
+        OriginalData: Record "Change Buffer_TSA_TSL" temporary;
         CurrentRunId: Guid;
 
-    procedure SetData(var ChangeBuffer: Record "Data Debugger Change Buffer"; RunId: Guid)
+    procedure SetData(var ChangeBuffer: Record "Change Buffer_TSA_TSL"; RunId: Guid)
     begin
         OriginalData.Copy(ChangeBuffer, true);
         CurrentRunId := RunId;

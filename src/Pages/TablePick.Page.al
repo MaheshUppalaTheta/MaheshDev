@@ -1,8 +1,8 @@
-page 50112 "DD Table Pick"
+page 72930466 "Table Pick_TSA_TSL"
 {
     PageType = List;
     Caption = 'Tables in Results';
-    SourceTable = "DD Table Pick Buffer";
+    SourceTable = "Table Pick Buffer_TSA_TSL";
     SourceTableTemporary = true;
     ApplicationArea = All;
     UsageCategory = None;
@@ -31,7 +31,7 @@ page 50112 "DD Table Pick"
         }
     }
 
-    procedure LoadTables(var Src: Record "Data Debugger Change Buffer" temporary)
+    procedure LoadTables(var Src: Record "Change Buffer_TSA_TSL" temporary)
     begin
         Rec.Reset();
         Rec.DeleteAll();

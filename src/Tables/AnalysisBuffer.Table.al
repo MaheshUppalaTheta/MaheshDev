@@ -1,6 +1,6 @@
-table 50004 "Data Debugger Analysis Buffer"
+table 72930454 "Analysis Buffer_TSA_TSL"
 {
-    Caption = 'Data Debugger Analysis Buffer';
+    Caption = 'Troubleshooting Assistance Analysis Buffer';
     TableType = Temporary;
     DataClassification = SystemMetadata;
 
@@ -10,7 +10,7 @@ table 50004 "Data Debugger Analysis Buffer"
         {
             Caption = 'Entry No.';
         }
-        field(10; "Analysis Type"; Enum "Data Debugger Analysis Type")
+        field(10; "Analysis Type"; Enum "Analysis Type_TSA_TSL")
         {
             Caption = 'Analysis Type';
         }
@@ -31,7 +31,7 @@ table 50004 "Data Debugger Analysis Buffer"
         {
             Caption = 'Value Text';
         }
-        field(15; Severity; Enum "Data Debugger Severity")
+        field(15; Severity; Enum "Severity_TSA_TSL")
         {
             Caption = 'Severity';
         }

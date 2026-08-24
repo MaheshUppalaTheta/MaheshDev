@@ -1,7 +1,7 @@
-codeunit 50141 "DD Test Error Runner"
+codeunit 72930462 "Test Error Runner_TSA_TSL"
 {
     // Test helper. Modifies the passed Customer and then raises an error. When invoked via
-    // Codeunit.Run(), the platform rolls back the database change — but any Data Debugger capture
+    // Codeunit.Run(), the platform rolls back the database change — but any Troubleshooting Assistance capture
     // that happened in memory (rollback-safe mode) survives, which is exactly what the tests assert.
     TableNo = Customer;
 

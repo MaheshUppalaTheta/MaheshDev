@@ -1,19 +1,19 @@
-permissionset 50003 "DD-Admin"
+permissionset 72930453 "Admin_TSA_TSL"
 {
-    Caption = 'Data Debugger - Admin';
+    Caption = 'Troubleshooting Assistance - Admin';
     Assignable = true;
-    IncludedPermissionSets = "DD-Operator";
+    IncludedPermissionSets = "Operator_TSA_TSL";
     Permissions =
-        tabledata "Data Debugger Setup" = RIMD,
-        tabledata "DD Agent Cue" = RIMD,
-        codeunit "DD Agent Diagnose" = X,
-        codeunit "DD Agent Factory" = X,
-        codeunit "DD Agent Metadata" = X,
-        codeunit "DD Agent Task Execution" = X,
-        codeunit "DD Agent Install" = X,
-        codeunit "DD Agent Provision" = X,
-        page "Data Debugger Setup" = X,
-        page "DD Agent Activities" = X,
-        page "DD Agent Role Center" = X,
-        page "DD Agent Setup" = X;
+        tabledata "Setup_TSA_TSL" = RIMD,
+        tabledata "Agent Cue_TSA_TSL" = RIMD,
+        codeunit "Agent Diagnose_TSA_TSL" = X,
+        codeunit "Agent Factory_TSA_TSL" = X,
+        codeunit "Agent Metadata_TSA_TSL" = X,
+        codeunit "Agent Task Execution_TSA_TSL" = X,
+        codeunit "Agent Install_TSA_TSL" = X,
+        codeunit "Agent Provision_TSA_TSL" = X,
+        page "Setup_TSA_TSL" = X,
+        page "Agent Activities_TSA_TSL" = X,
+        page "Agent Role Center_TSA_TSL" = X,
+        page "Agent Setup_TSA_TSL" = X;
 }

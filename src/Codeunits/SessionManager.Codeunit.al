@@ -1,4 +1,4 @@
-codeunit 50000 "Data Debugger Session Manager"
+codeunit 72930450 "Session Manager_TSA_TSL"
 {
     SingleInstance = true;
 
@@ -7,7 +7,7 @@ codeunit 50000 "Data Debugger Session Manager"
         // session memory on a SingleInstance codeunit, it is NOT part of the database transaction,
         // so a process error/rollback does not discard it. It is flushed to the persisted Change
         // Buffer table on StopRecording.
-        TempChangeBuffer: Record "Data Debugger Change Buffer" temporary;
+        TempChangeBuffer: Record "Change Buffer_TSA_TSL" temporary;
         // AutoIncrement does not fire on temporary tables, so we assign Entry No. ourselves.
         LastTempEntryNo: Integer;
 
@@ -23,11 +23,11 @@ codeunit 50000 "Data Debugger Session Manager"
 
     procedure StartRecording(RecUserSecurityId: Guid; RecUserId: Code[50]; RecUserName: Text): Guid
     var
-        State: Record "DD Recording State";
-        ChangeBuffer: Record "Data Debugger Change Buffer";
-        Setup: Record "Data Debugger Setup";
-        ContextManager: Codeunit "Data Debugger Context Manager";
-        FilterManager: Codeunit "Data Debugger Filter Manager";
+        State: Record "Recording State_TSA_TSL";
+        ChangeBuffer: Record "Change Buffer_TSA_TSL";
+        Setup: Record "Setup_TSA_TSL";
+        ContextManager: Codeunit "Context Manager_TSA_TSL";
+        FilterManager: Codeunit "Filter Manager_TSA_TSL";
         NewRunId: Guid;
     begin
         if IsNullGuid(RecUserSecurityId) then
@@ -66,16 +66,16 @@ codeunit 50000 "Data Debugger Session Manager"
 
         InvalidateCache();
 
-        Message('Data Debugger recording started for user %1. Run ID: %2', RecUserId, NewRunId);
+        Message('Troubleshooting Assistance recording started for user %1. Run ID: %2', RecUserId, NewRunId);
         exit(NewRunId);
     end;
 
     procedure StopRecording()
     var
-        State: Record "DD Recording State";
-        TempBuffer: Record "Data Debugger Change Buffer" temporary;
-        DataDebuggerResults: Page "Data Debugger Results";
-        ContextManager: Codeunit "Data Debugger Context Manager";
+        State: Record "Recording State_TSA_TSL";
+        TempBuffer: Record "Change Buffer_TSA_TSL" temporary;
+        TroubleshootingAssistanceResults: Page "Results_TSA_TSL";
+        ContextManager: Codeunit "Context Manager_TSA_TSL";
         RunId: Guid;
         StartTime: DateTime;
     begin
@@ -108,12 +108,12 @@ codeunit 50000 "Data Debugger Session Manager"
         // End transaction context
         ContextManager.EndTransaction();
 
-        Message('Data Debugger recording stopped. Captured %1 changes.', GetTotalChangeCount(RunId));
+        Message('Troubleshooting Assistance recording stopped. Captured %1 changes.', GetTotalChangeCount(RunId));
 
         // Open results page with captured data (persisted; survives the session).
         // GetChanges(TempBuffer);
-        // DataDebuggerResults.SetData(TempBuffer, RunId, StartTime);
-        // DataDebuggerResults.RunModal();
+        // TroubleshootingAssistanceResults.SetData(TempBuffer, RunId, StartTime);
+        // TroubleshootingAssistanceResults.RunModal();
     end;
 
     local procedure CaptureLastSessionError()
@@ -138,7 +138,7 @@ codeunit 50000 "Data Debugger Session Manager"
 
         // Table 0 → "Session Runtime Error" (see BuildEntry). The error-origin call stack is passed
         // as the override so it is stored verbatim, not the synthetic capture-path stack.
-        AddChange(0, "Data Debugger Change Type"::Error, ErrorText, '', NewDataJson, false, ErrorCallStack);
+        AddChange(0, "Change Type_TSA_TSL"::Error, ErrorText, '', NewDataJson, false, ErrorCallStack);
     end;
 
     procedure IsActive(): Boolean
@@ -162,7 +162,7 @@ codeunit 50000 "Data Debugger Session Manager"
 
     procedure GetCurrentRunId(): Guid
     var
-        State: Record "DD Recording State";
+        State: Record "Recording State_TSA_TSL";
     begin
         State := State.GetState();
         exit(State."Run ID");
@@ -170,25 +170,25 @@ codeunit 50000 "Data Debugger Session Manager"
 
     procedure GetRecordingUserId(): Code[50]
     var
-        State: Record "DD Recording State";
+        State: Record "Recording State_TSA_TSL";
     begin
         State := State.GetState();
         exit(State."Recorded User ID");
     end;
 
-    procedure AddChange(TableId: Integer; ChangeType: Enum "Data Debugger Change Type"; PrimaryKey: Text; OldDataJson: Text; NewDataJson: Text)
+    procedure AddChange(TableId: Integer; ChangeType: Enum "Change Type_TSA_TSL"; PrimaryKey: Text; OldDataJson: Text; NewDataJson: Text)
     begin
         AddChange(TableId, ChangeType, PrimaryKey, OldDataJson, NewDataJson, false);
     end;
 
-    procedure AddChange(TableId: Integer; ChangeType: Enum "Data Debugger Change Type"; PrimaryKey: Text; OldDataJson: Text; NewDataJson: Text; IsTemporaryTable: Boolean)
+    procedure AddChange(TableId: Integer; ChangeType: Enum "Change Type_TSA_TSL"; PrimaryKey: Text; OldDataJson: Text; NewDataJson: Text; IsTemporaryTable: Boolean)
     begin
         AddChange(TableId, ChangeType, PrimaryKey, OldDataJson, NewDataJson, IsTemporaryTable, '');
     end;
 
-    procedure AddChange(TableId: Integer; ChangeType: Enum "Data Debugger Change Type"; PrimaryKey: Text; OldDataJson: Text; NewDataJson: Text; IsTemporaryTable: Boolean; CallStackOverride: Text)
+    procedure AddChange(TableId: Integer; ChangeType: Enum "Change Type_TSA_TSL"; PrimaryKey: Text; OldDataJson: Text; NewDataJson: Text; IsTemporaryTable: Boolean; CallStackOverride: Text)
     var
-        ChangeBuffer: Record "Data Debugger Change Buffer";
+        ChangeBuffer: Record "Change Buffer_TSA_TSL";
     begin
         EnsureCacheFresh();
         if not CachedIsRecording then
@@ -213,10 +213,10 @@ codeunit 50000 "Data Debugger Session Manager"
 
 
 
-    local procedure BuildEntry(var Buf: Record "Data Debugger Change Buffer"; TableId: Integer; ChangeType: Enum "Data Debugger Change Type"; PrimaryKey: Text; OldDataJson: Text; NewDataJson: Text; IsTemporaryTable: Boolean; CallStackOverride: Text)
+    local procedure BuildEntry(var Buf: Record "Change Buffer_TSA_TSL"; TableId: Integer; ChangeType: Enum "Change Type_TSA_TSL"; PrimaryKey: Text; OldDataJson: Text; NewDataJson: Text; IsTemporaryTable: Boolean; CallStackOverride: Text)
     var
         TableMetadata: Record "Table Metadata";
-        ContextManager: Codeunit "Data Debugger Context Manager";
+        ContextManager: Codeunit "Context Manager_TSA_TSL";
     begin
         Buf.Init();
         Buf."Run ID" := CachedRunId;
@@ -260,7 +260,7 @@ codeunit 50000 "Data Debugger Session Manager"
 
     local procedure FlushTempToReal()
     var
-        RealBuffer: Record "Data Debugger Change Buffer";
+        RealBuffer: Record "Change Buffer_TSA_TSL";
         NextEntryNo: Integer;
     begin
         // Move the in-memory capture into the persisted table, preserving capture order. BLOBs are
@@ -310,7 +310,7 @@ codeunit 50000 "Data Debugger Session Manager"
     /// </summary>
     procedure ClearCapturedData()
     var
-        ChangeBuffer: Record "Data Debugger Change Buffer";
+        ChangeBuffer: Record "Change Buffer_TSA_TSL";
     begin
         if IsActive() then
             Error('Stop the current recording before clearing captured data.');
@@ -325,16 +325,16 @@ codeunit 50000 "Data Debugger Session Manager"
 
     local procedure GetTotalChangeCount(RunId: Guid): Integer
     var
-        ChangeBuffer: Record "Data Debugger Change Buffer";
+        ChangeBuffer: Record "Change Buffer_TSA_TSL";
     begin
         ChangeBuffer.SetRange("Run ID", RunId);
         exit(ChangeBuffer.Count());
     end;
 
-    procedure GetChanges(var TempBuffer: Record "Data Debugger Change Buffer" temporary)
+    procedure GetChanges(var TempBuffer: Record "Change Buffer_TSA_TSL" temporary)
     var
-        ChangeBuffer: Record "Data Debugger Change Buffer";
-        State: Record "DD Recording State";
+        ChangeBuffer: Record "Change Buffer_TSA_TSL";
+        State: Record "Recording State_TSA_TSL";
     begin
         TempBuffer.Reset();
         TempBuffer.DeleteAll();
@@ -362,11 +362,11 @@ codeunit 50000 "Data Debugger Session Manager"
             until ChangeBuffer.Next() = 0;
     end;
 
-    procedure GetLiveStatistics(): Record "Data Debugger Live Stats"
+    procedure GetLiveStatistics(): Record "Live Stats_TSA_TSL"
     var
-        Stats: Record "Data Debugger Live Stats";
-        State: Record "DD Recording State";
-        ChangeBuffer: Record "Data Debugger Change Buffer";
+        Stats: Record "Live Stats_TSA_TSL";
+        State: Record "Recording State_TSA_TSL";
+        ChangeBuffer: Record "Change Buffer_TSA_TSL";
         Duration: Duration;
         TotalChanges: Integer;
         ChangesPerSecond: Decimal;
@@ -422,26 +422,26 @@ codeunit 50000 "Data Debugger Session Manager"
         exit(Stats);
     end;
 
-    procedure GetCurrentSessionData(var TempBuffer: Record "Data Debugger Change Buffer" temporary)
+    procedure GetCurrentSessionData(var TempBuffer: Record "Change Buffer_TSA_TSL" temporary)
     begin
         GetChanges(TempBuffer);
     end;
 
     procedure ShowResults()
     var
-        State: Record "DD Recording State";
-        TempBuffer: Record "Data Debugger Change Buffer" temporary;
-        DataDebuggerResults: Page "Data Debugger Results";
+        State: Record "Recording State_TSA_TSL";
+        TempBuffer: Record "Change Buffer_TSA_TSL" temporary;
+        TroubleshootingAssistanceResults: Page "Results_TSA_TSL";
     begin
         State := State.GetState();
         GetChanges(TempBuffer);
-        DataDebuggerResults.SetData(TempBuffer, State."Run ID", State."Start Time");
-        DataDebuggerResults.RunModal();
+        TroubleshootingAssistanceResults.SetData(TempBuffer, State."Run ID", State."Start Time");
+        TroubleshootingAssistanceResults.RunModal();
     end;
 
     procedure GetSessionStartTime(): DateTime
     var
-        State: Record "DD Recording State";
+        State: Record "Recording State_TSA_TSL";
     begin
         State := State.GetState();
         exit(State."Start Time");
@@ -449,7 +449,7 @@ codeunit 50000 "Data Debugger Session Manager"
 
     internal procedure IsStateActive(): Boolean
     var
-        State: Record "DD Recording State";
+        State: Record "Recording State_TSA_TSL";
     begin
         if State.Get('') then
             exit(State."Is Recording");
@@ -458,7 +458,7 @@ codeunit 50000 "Data Debugger Session Manager"
 
     local procedure EnsureCacheFresh()
     var
-        State: Record "DD Recording State";
+        State: Record "Recording State_TSA_TSL";
     begin
         if CacheValid then
             exit;

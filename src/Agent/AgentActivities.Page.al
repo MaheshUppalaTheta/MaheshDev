@@ -1,13 +1,13 @@
-page 50012 "DD Agent Activities"
+page 72930461 "Agent Activities_TSA_TSL"
 {
-    Caption = 'Data Debugger Activities';
+    Caption = 'Troubleshooting Assistance Activities';
     PageType = CardPart;
-    SourceTable = "DD Agent Cue";
+    SourceTable = "Agent Cue_TSA_TSL";
     Editable = false;
     ApplicationArea = All;
 
     // Activities part for the agent Role Center. Each cue ("queue") shows a live count and drills
-    // into the Data Debugger Changes list, mirroring the standard "Sales Order Activities" pattern.
+    // into the Troubleshooting Assistance Changes list, mirroring the standard "Sales Order Activities" pattern.
     layout
     {
         area(Content)
@@ -20,20 +20,20 @@ page 50012 "DD Agent Activities"
                 {
                     Caption = 'All Changes';
                     ToolTip = 'Total number of captured changes. Click to open the full list.';
-                    DrillDownPageId = "DD Change Entry Preview";
+                    DrillDownPageId = "Change Entry Preview_TSA_TSL";
                 }
                 field("Error Changes"; Rec."Error Changes")
                 {
                     Caption = 'Errors';
                     ToolTip = 'Captured entries of type Error. Click to open the list.';
-                    DrillDownPageId = "DD Change Entry Preview";
+                    DrillDownPageId = "Change Entry Preview_TSA_TSL";
                     StyleExpr = ErrorStyle;
                 }
                 field("Temporary Table Changes"; Rec."Temporary Table Changes")
                 {
                     Caption = 'Temporary Table Changes';
                     ToolTip = 'Captured changes made on temporary tables. Click to open the list.';
-                    DrillDownPageId = "DD Change Entry Preview";
+                    DrillDownPageId = "Change Entry Preview_TSA_TSL";
                 }
             }
         }

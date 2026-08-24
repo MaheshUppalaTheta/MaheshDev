@@ -1,8 +1,8 @@
-page 50111 "DD Field Selection"
+page 72930465 "Field Selection_TSA_TSL"
 {
     PageType = List;
     Caption = 'Select Fields';
-    SourceTable = "DD Field Selection Buffer";
+    SourceTable = "Field Select Buffer_TSA_TSL";
     ApplicationArea = All;
     UsageCategory = None;
     InsertAllowed = false;
@@ -106,7 +106,7 @@ page 50111 "DD Field Selection"
     local procedure PopulateFields()
     var
         Fld: Record Field;
-        FieldSel: Record "DD Field Selection Buffer";
+        FieldSel: Record "Field Select Buffer_TSA_TSL";
     begin
         if TableNo = 0 then
             exit;

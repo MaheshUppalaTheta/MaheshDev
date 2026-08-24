@@ -1,4 +1,4 @@
-enum 50005 "DD Capture Scope"
+enum 72930453 "Capture Scope_TSA_TSL"
 {
     Extensible = true;
 

@@ -1,6 +1,6 @@
-codeunit 50005 "DD Agent Diagnose"
+codeunit 72930455 "Agent Diagnose_TSA_TSL"
 {
-    // Creates an agent task that asks the Data Debugger Agent to diagnose the most recent recording
+    // Creates an agent task that asks the Troubleshooting Assistance Agent to diagnose the most recent recording
     // run, using the BC Agent Tasks API (Agent Task Builder). Triggered from a page action so a user
     // can launch the canned "diagnose latest run" task in one click — the code-side equivalent of an
     // agent task template.
@@ -18,7 +18,7 @@ codeunit 50005 "DD Agent Diagnose"
 
         AgentTask := AgentTaskBuilder
             .Initialize(AgentSecId, 'Diagnose latest captured run')
-            .AddTaskMessage('Data Debugger', BuildPrompt(LatestRunId))
+            .AddTaskMessage('Troubleshooting Assistance', BuildPrompt(LatestRunId))
             .Create();
 
         Message('Sent a diagnosis task for run %1 to agent ''%2''. Open the agent to review and run it.', LatestRunId, AgentName);
@@ -46,19 +46,19 @@ codeunit 50005 "DD Agent Diagnose"
 
     local procedure GetLatestRunId(): Guid
     var
-        ChangeBuffer: Record "Data Debugger Change Buffer";
+        ChangeBuffer: Record "Change Buffer_TSA_TSL";
     begin
         ChangeBuffer.SetCurrentKey("Entry No.");
         if not ChangeBuffer.FindLast() then
-            Error('There are no captured changes yet. Record a process with the Data Debugger first.');
+            Error('There are no captured changes yet. Record a process with the Troubleshooting Assistance first.');
         exit(ChangeBuffer."Run ID");
     end;
 
     local procedure BuildPrompt(RunId: Guid): Text
     begin
         exit(
-            'Diagnose the most recent Data Debugger recording run (Run ID ' + Format(RunId) + '). ' +
-            'Open the Data Debugger Change Entries page and review all entries for that run. ' +
+            'Diagnose the most recent Troubleshooting Assistance recording run (Run ID ' + Format(RunId) + '). ' +
+            'Open the Troubleshooting Assistance Change Entries page and review all entries for that run. ' +
             'First look for any Change Type = Error entries and the "Session Runtime Error" entry (Table ID 0); ' +
             'if present, quote the exact error message and read its Call Stack. ' +
             'Then walk the entries in time order, find the first change that caused the failure or the unexpected value ' +

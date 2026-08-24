@@ -2,7 +2,7 @@
 
 // using System.Reflection;
 
-page 50040 "Event Recorder Custom"
+page 72930467 "Event Recorder Custom"
 {
     ApplicationArea = Basic, Suite;
     Caption = 'Event Recorder Custom';

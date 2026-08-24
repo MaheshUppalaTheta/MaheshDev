@@ -1,16 +1,16 @@
-// query 50101 "DD Recording Run API"
+// query 72930450 "Recording Run API_TSA_TSL"
 // {
 //     QueryType = API;
-//     Caption = 'Data Debugger Recording Run';
+//     Caption = 'Troubleshooting Assistance Recording Run';
 //     APIPublisher = 'theta';
-//     APIGroup = 'dataDebugger';
+//     APIGroup = 'troubleshootingAssistance';
 //     APIVersion = 'v1.0';
 //     EntityName = 'recordingRun';
 //     EntitySetName = 'recordingRuns';
 
 //     elements
 //     {
-//         dataitem(changeEntry; "Data Debugger Change Buffer")
+//         dataitem(changeEntry; "Change Buffer_TSA_TSL")
 //         {
 //             // Grouped by Run ID (the only non-aggregated column).
 //             column(runId; "Run ID")

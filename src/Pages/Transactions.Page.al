@@ -1,4 +1,4 @@
-page 50007 "Data Debugger Transactions"
+page 72930457 "Transactions_TSA_TSL"
 {
     Caption = 'Changes Grouped by Transaction';
     PageType = List;
@@ -49,9 +49,9 @@ page 50007 "Data Debugger Transactions"
 
                 trigger OnAction()
                 var
-                    FilteredResultsPage: Page "Data Debugger Results";
-                    TempFilteredBuffer: Record "Data Debugger Change Buffer" temporary;
-                    SourceBuffer: Record "Data Debugger Change Buffer";
+                    FilteredResultsPage: Page "Results_TSA_TSL";
+                    TempFilteredBuffer: Record "Change Buffer_TSA_TSL" temporary;
+                    SourceBuffer: Record "Change Buffer_TSA_TSL";
                     TransactionGuid: Guid;
                 begin
                     if Rec.Name = '' then
@@ -79,10 +79,10 @@ page 50007 "Data Debugger Transactions"
         CurrentRunId: Guid;
         SessionStartTime: DateTime;
 
-    procedure SetData(var SourceBuffer: Record "Data Debugger Change Buffer"; RunId: Guid)
+    procedure SetData(var SourceBuffer: Record "Change Buffer_TSA_TSL"; RunId: Guid)
     var
-        TransactionBuffer: Record "Data Debugger Change Buffer";
-        InnerBuffer: Record "Data Debugger Change Buffer";
+        TransactionBuffer: Record "Change Buffer_TSA_TSL";
+        InnerBuffer: Record "Change Buffer_TSA_TSL";
         TransactionId: Guid;
         ChangeCount: Integer;
         FirstUser: Text;

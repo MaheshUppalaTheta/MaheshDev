@@ -1,6 +1,6 @@
-table 50000 "Data Debugger Change Buffer"
+table 72930450 "Change Buffer_TSA_TSL"
 {
-    Caption = 'Data Debugger Change Buffer';
+    Caption = 'Troubleshooting Assistance Change Buffer';
     DataClassification = SystemMetadata;
 
     fields
@@ -26,7 +26,7 @@ table 50000 "Data Debugger Change Buffer"
         {
             Caption = 'Table Name';
         }
-        field(6; "Change Type"; Enum "Data Debugger Change Type")
+        field(6; "Change Type"; Enum "Change Type_TSA_TSL")
         {
             Caption = 'Change Type';
         }

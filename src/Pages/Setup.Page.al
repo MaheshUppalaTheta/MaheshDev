@@ -1,8 +1,8 @@
-page 50004 "Data Debugger Setup"
+page 72930454 "Setup_TSA_TSL"
 {
-    Caption = 'Data Debugger Setup';
+    Caption = 'Troubleshooting Assistance Setup';
     PageType = Card;
-    SourceTable = "Data Debugger Setup";
+    SourceTable = "Setup_TSA_TSL";
     ApplicationArea = All;
     UsageCategory = Administration;
 
@@ -21,7 +21,7 @@ page 50004 "Data Debugger Setup"
 
                     trigger OnValidate()
                     var
-                        TableFilterPage: Page "Data Debugger Table Filters";
+                        TableFilterPage: Page "Table Filters_TSA_TSL";
                     begin
                         // A whitelist/blacklist scope needs a configured table list, so jump straight
                         // to Table Filters. "All Tables" needs no list. Existing rows are kept either way.
@@ -100,7 +100,7 @@ page 50004 "Data Debugger Setup"
 
                 trigger OnAction()
                 var
-                    TableFilterPage: Page "Data Debugger Table Filters";
+                    TableFilterPage: Page "Table Filters_TSA_TSL";
                 begin
                     TableFilterPage.RunModal();
                 end;

@@ -46,7 +46,7 @@ Decomposed the monolithic `GeneratedPermission` into three least-privilege roles
 - Outcome: completed (two-pass: NEEDS_REVISION on first pass, fixed, APPROVED_WITH_RECOMMENDATIONS on second)
 - Findings addressed: F1–F3 (major — DDReader RIMD→R), F4 (minor — Caption), F6 (minor — GIVEN/WHEN/THEN), F7 (minor — Customer reset), F8/F9 (info — variable names)
 - Remaining open: F5 (minor — custom AssertTrue kept for consistency with codeunit 50140 pattern)
-- Raw report: `data-debugger-multi-user-hardening-review-phase-4.json`
+- Raw report: `tsa-multi-user-hardening-review-phase-4.json`
 
 **Known deviations:**
 - `DataDebuggerSetup.Table.al` `GetSetup()` was externally re-edited to re-add `Setup.Insert()` after the Spec A fix. This reverts the singleton-getter write guard. User-accepted deviation; the OnInstallAppPerCompany seed remains as the primary protection.

@@ -1,6 +1,6 @@
-table 50003 "Data Debugger Live Stats"
+table 72930453 "Live Stats_TSA_TSL"
 {
-    Caption = 'Data Debugger Live Stats';
+    Caption = 'Troubleshooting Assistance Live Stats';
     TableType = Temporary;
     DataClassification = SystemMetadata;
 

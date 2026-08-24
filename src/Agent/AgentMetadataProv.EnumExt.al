@@ -1,12 +1,12 @@
-enumextension 50006 "DD Agent Metadata Provider" extends "Agent Metadata Provider"
+enumextension 72930450 "Agent Metadata Prov_TSA_TSL" extends "Agent Metadata Provider"
 {
-    // Registers the Data Debugger agent type and binds it to its three interface implementations.
-    value(50100; "Data Debugger Agent")
+    // Registers the Troubleshooting Assistance agent type and binds it to its three interface implementations.
+    value(72930450; "Troubleshoot Agent_TSA_TSL")
     {
-        Caption = 'Data Debugger Agent';
+        Caption = 'Troubleshooting Assistance Agent';
         Implementation =
-            IAgentFactory = "DD Agent Factory",
-            IAgentMetadata = "DD Agent Metadata",
-            IAgentTaskExecution = "DD Agent Task Execution";
+            IAgentFactory = "Agent Factory_TSA_TSL",
+            IAgentMetadata = "Agent Metadata_TSA_TSL",
+            IAgentTaskExecution = "Agent Task Execution_TSA_TSL";
     }
 }

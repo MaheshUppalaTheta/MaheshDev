@@ -1,6 +1,6 @@
-table 50002 "Data Debugger Table Filter"
+table 72930452 "Table Filter_TSA_TSL"
 {
-    Caption = 'Data Debugger Table Filter';
+    Caption = 'Troubleshooting Assistance Table Filter';
     DataClassification = SystemMetadata;
 
     fields
@@ -55,8 +55,8 @@ table 50002 "Data Debugger Table Filter"
 
     trigger OnDelete()
     var
-        FieldSel: Record "DD Field Selection Buffer";
-        OtherFilter: Record "Data Debugger Table Filter";
+        FieldSel: Record "Field Select Buffer_TSA_TSL";
+        OtherFilter: Record "Table Filter_TSA_TSL";
     begin
         // Remove this table's stored field selections, unless another filter row
         // still references the same Table ID.
@@ -80,7 +80,7 @@ table 50002 "Data Debugger Table Filter"
     local procedure PopulateAllFieldsSelected()
     var
         Fld: Record Field;
-        FieldSel: Record "DD Field Selection Buffer";
+        FieldSel: Record "Field Select Buffer_TSA_TSL";
     begin
         if "Table ID" = 0 then
             exit;

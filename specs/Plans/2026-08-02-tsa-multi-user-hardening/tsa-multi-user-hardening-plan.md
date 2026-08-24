@@ -1,4 +1,4 @@
-# Plan: Data Debugger Multi-User Hardening
+# Plan: Trouble Shooting Assitance Multi-User Hardening
 
 TL;DR: Three waves of hardening — core correctness bugs (Spec A), privacy/compliance (Spec B in parallel with A), and security/tests (Spec C after A+B). Preserves true multi-user recording throughout.
 
@@ -63,7 +63,7 @@ TL;DR: Three waves of hardening — core correctness bugs (Spec A), privacy/comp
 **Objective:** Field-level DataClassification corrections and app.json metadata + exposure policy hardening.
 
 **AL Objects to Modify:**
-- `Data Debugger Change Buffer` Table 50000 — add DataClassification to fields 8, 9, 11, 12, 16
+- `Trouble Shooting Assitance Change Buffer` Table 50000 — add DataClassification to fields 8, 9, 11, 12, 16
 - `DD Recording State` Table 50007 — add DataClassification to fields 4, 5, 6
 - `app.json` — populate brief, description, privacyStatement, EULA, help, url; tighten resourceExposurePolicy
 

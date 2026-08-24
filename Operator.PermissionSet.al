@@ -1,22 +1,22 @@
-permissionset 50002 "DD-Operator"
+permissionset 72930452 "Operator_TSA_TSL"
 {
-    Caption = 'Data Debugger - Operator';
+    Caption = 'Troubleshooting Assistance - Operator';
     Assignable = true;
-    IncludedPermissionSets = "DD-Reader";
+    IncludedPermissionSets = "Reader_TSA_TSL";
     Permissions =
-        tabledata "Data Debugger Change Buffer" = RIMD,
-        tabledata "Data Debugger Analysis Buffer" = RIMD,
-        tabledata "Data Debugger Live Stats" = RIMD,
-        tabledata "DD Recording State" = RIMD,
-        tabledata "Data Debugger Table Filter" = RIMD,
-        tabledata "DD Field Selection Buffer" = RIMD,
-        tabledata "DD Table Pick Buffer" = RIMD,
-        codeunit "Data Debugger Session Manager" = X,
-        codeunit "Data Debugger Filter Manager" = X,
-        codeunit "Data Debugger Context Manager" = X,
-        codeunit "Data Debugger Event Handlers" = X,
-        codeunit "Data Debugger Analysis Engine" = X,
-        page "Data Debugger Table Filters" = X,
-        page "DD Field Selection" = X,
-        page "DD Table Pick" = X;
+        tabledata "Change Buffer_TSA_TSL" = RIMD,
+        tabledata "Analysis Buffer_TSA_TSL" = RIMD,
+        tabledata "Live Stats_TSA_TSL" = RIMD,
+        tabledata "Recording State_TSA_TSL" = RIMD,
+        tabledata "Table Filter_TSA_TSL" = RIMD,
+        tabledata "Field Select Buffer_TSA_TSL" = RIMD,
+        tabledata "Table Pick Buffer_TSA_TSL" = RIMD,
+        codeunit "Session Manager_TSA_TSL" = X,
+        codeunit "Filter Manager_TSA_TSL" = X,
+        codeunit "Context Manager_TSA_TSL" = X,
+        codeunit "Event Handlers_TSA_TSL" = X,
+        codeunit "Analysis Engine_TSA_TSL" = X,
+        page "Table Filters_TSA_TSL" = X,
+        page "Field Selection_TSA_TSL" = X,
+        page "Table Pick_TSA_TSL" = X;
 }

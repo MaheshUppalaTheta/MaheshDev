@@ -1,9 +1,9 @@
-codeunit 50002 "Data Debugger Filter Manager"
+codeunit 72930452 "Filter Manager_TSA_TSL"
 {
     SingleInstance = true;
 
     var
-        Setup: Record "Data Debugger Setup";
+        Setup: Record "Setup_TSA_TSL";
         IsSetupLoaded: Boolean;
         LastCaptureTime: DateTime;
         CaptureCount: Integer;
@@ -32,7 +32,7 @@ codeunit 50002 "Data Debugger Filter Manager"
 
     local procedure IsTableInList(TableId: Integer): Boolean
     var
-        TableFilter: Record "Data Debugger Table Filter";
+        TableFilter: Record "Table Filter_TSA_TSL";
     begin
         TableFilter.SetRange("Table ID", TableId);
         TableFilter.SetRange(Enabled, true);
@@ -70,7 +70,7 @@ codeunit 50002 "Data Debugger Filter Manager"
 
     procedure FilterFields(var JsonObj: JsonObject; TableId: Integer)
     var
-        FieldSel: Record "DD Field Selection Buffer";
+        FieldSel: Record "Field Select Buffer_TSA_TSL";
         SelectedNames: List of [Text];
         Keys: List of [Text];
         KeyText: Text;
@@ -162,16 +162,16 @@ codeunit 50002 "Data Debugger Filter Manager"
         ExcludedTables[9] := 2000000111; // User Session Log
         ExcludedTables[10] := Database::"Scheduled Task";
 
-        // Exclude Data Debugger's own tables to prevent recursive recording
-        ExcludedTables[11] := Database::"Data Debugger Change Buffer";
-        ExcludedTables[12] := Database::"Data Debugger Setup";
-        ExcludedTables[13] := Database::"Data Debugger Table Filter";
-        ExcludedTables[14] := Database::"Data Debugger Live Stats";
-        ExcludedTables[15] := Database::"Data Debugger Analysis Buffer";
-        ExcludedTables[16] := Database::"DD Field Selection Buffer";
-        ExcludedTables[17] := Database::"DD Recording State";
-        ExcludedTables[18] := Database::"DD Table Pick Buffer";
-        ExcludedTables[19] := Database::"DD Agent Cue";
+        // Exclude Troubleshooting Assistance's own tables to prevent recursive recording
+        ExcludedTables[11] := Database::"Change Buffer_TSA_TSL";
+        ExcludedTables[12] := Database::"Setup_TSA_TSL";
+        ExcludedTables[13] := Database::"Table Filter_TSA_TSL";
+        ExcludedTables[14] := Database::"Live Stats_TSA_TSL";
+        ExcludedTables[15] := Database::"Analysis Buffer_TSA_TSL";
+        ExcludedTables[16] := Database::"Field Select Buffer_TSA_TSL";
+        ExcludedTables[17] := Database::"Recording State_TSA_TSL";
+        ExcludedTables[18] := Database::"Table Pick Buffer_TSA_TSL";
+        ExcludedTables[19] := Database::"Agent Cue_TSA_TSL";
 
         // Check if the table is in the excluded list
         for i := 1 to ArrayLen(ExcludedTables) do begin

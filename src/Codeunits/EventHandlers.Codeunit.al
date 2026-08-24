@@ -1,4 +1,4 @@
-codeunit 50001 "Data Debugger Event Handlers"
+codeunit 72930451 "Event Handlers_TSA_TSL"
 {
     // Automatic subscribers: these fire in every user session (like the base Change Log), which
     // is what lets the tool capture a *selected* user's operations no matter which session they
@@ -15,8 +15,8 @@ codeunit 50001 "Data Debugger Event Handlers"
 
 
     var
-        SessionManager: Codeunit "Data Debugger Session Manager";
-        FilterManager: Codeunit "Data Debugger Filter Manager";
+        SessionManager: Codeunit "Session Manager_TSA_TSL";
+        FilterManager: Codeunit "Filter Manager_TSA_TSL";
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"Global Triggers", 'GetDatabaseTableTriggerSetup', '', false, false)]
     local procedure GetDatabaseTableTriggerSetup(TableId: Integer; var OnDatabaseInsert: Boolean; var OnDatabaseModify: Boolean; var OnDatabaseDelete: Boolean; var OnDatabaseRename: Boolean)
@@ -141,7 +141,7 @@ codeunit 50001 "Data Debugger Event Handlers"
                 ErrorCallStack := '(no error call stack recorded on the Error Message record)';
             SessionManager.AddChange(
                 RecRef.Number(),
-                "Data Debugger Change Type"::Error,
+                "Change Type_TSA_TSL"::Error,
                 PrimaryKey,
                 '',
                 NewDataJson,
@@ -151,7 +151,7 @@ codeunit 50001 "Data Debugger Event Handlers"
         end else
             SessionManager.AddChange(
                 RecRef.Number(),
-                "Data Debugger Change Type"::Insert,
+                "Change Type_TSA_TSL"::Insert,
                 PrimaryKey,
                 '', // No old data for insert
                 NewDataJson,
@@ -174,7 +174,7 @@ codeunit 50001 "Data Debugger Event Handlers"
 
         SessionManager.AddChange(
             RecRef.Number(),
-            "Data Debugger Change Type"::Modify,
+            "Change Type_TSA_TSL"::Modify,
             PrimaryKey,
             OldDataJson,
             NewDataJson,
@@ -194,7 +194,7 @@ codeunit 50001 "Data Debugger Event Handlers"
 
         SessionManager.AddChange(
             RecRef.Number(),
-            "Data Debugger Change Type"::Delete,
+            "Change Type_TSA_TSL"::Delete,
             PrimaryKey,
             OldDataJson,
             '', // No new data for delete
@@ -216,7 +216,7 @@ codeunit 50001 "Data Debugger Event Handlers"
 
         SessionManager.AddChange(
             RecRef.Number(),
-            "Data Debugger Change Type"::Rename,
+            "Change Type_TSA_TSL"::Rename,
             PrimaryKey,
             OldDataJson,
             NewDataJson,

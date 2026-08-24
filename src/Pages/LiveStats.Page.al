@@ -1,4 +1,4 @@
-page 50009 "Data Debugger Live Stats"
+page 72930459 "Live Stats_TSA_TSL"
 {
     Caption = 'Live Statistics';
     PageType = Card;
@@ -97,9 +97,9 @@ page 50009 "Data Debugger Live Stats"
 
                 trigger OnAction()
                 var
-                    ChangeBuffer: Record "Data Debugger Change Buffer" temporary;
-                    SessionManager: Codeunit "Data Debugger Session Manager";
-                    AnalysisPage: Page "DD Advanced Analysis";
+                    ChangeBuffer: Record "Change Buffer_TSA_TSL" temporary;
+                    SessionManager: Codeunit "Session Manager_TSA_TSL";
+                    AnalysisPage: Page "Advanced Analysis_TSA_TSL";
                 begin
                     SessionManager.GetCurrentSessionData(ChangeBuffer);
                     AnalysisPage.SetSourceData(ChangeBuffer);
@@ -133,8 +133,8 @@ page 50009 "Data Debugger Live Stats"
 
     local procedure RefreshData()
     var
-        ChangeBuffer: Record "Data Debugger Change Buffer" temporary;
-        SessionManager: Codeunit "Data Debugger Session Manager";
+        ChangeBuffer: Record "Change Buffer_TSA_TSL" temporary;
+        SessionManager: Codeunit "Session Manager_TSA_TSL";
         TableCounts: Dictionary of [Integer, Integer];
         UserCounts: Dictionary of [Text, Integer];
         MaxCount: Integer;

@@ -1,6 +1,6 @@
-table 50007 "DD Recording State"
+table 72930457 "Recording State_TSA_TSL"
 {
-    Caption = 'Data Debugger Recording State';
+    Caption = 'Troubleshooting Assistance Recording State';
     DataClassification = SystemMetadata;
 
     // Singleton holding the cross-session recording state. Because capture now runs in the
@@ -56,9 +56,9 @@ table 50007 "DD Recording State"
         }
     }
 
-    procedure GetState(): Record "DD Recording State"
+    procedure GetState(): Record "Recording State_TSA_TSL"
     var
-        State: Record "DD Recording State";
+        State: Record "Recording State_TSA_TSL";
     begin
         if not State.Get('') then begin
             State.Init();

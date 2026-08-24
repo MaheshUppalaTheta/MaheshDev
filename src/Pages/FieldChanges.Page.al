@@ -1,4 +1,4 @@
-page 50002 "Data Debugger Field Changes"
+page 72930452 "Field Changes_TSA_TSL"
 {
     Caption = 'Field Changes Detail';
     PageType = List;
@@ -140,12 +140,12 @@ page 50002 "Data Debugger Field Changes"
     }
 
     var
-        ChangeRecord: Record "Data Debugger Change Buffer";
+        ChangeRecord: Record "Change Buffer_TSA_TSL";
         OriginalBuffer: Record "Name/Value Buffer" temporary;
         ShowOnlyChanged: Boolean;
         ChangedFieldsCount: Integer;
 
-    procedure SetChangeRecord(var ChangeRec: Record "Data Debugger Change Buffer")
+    procedure SetChangeRecord(var ChangeRec: Record "Change Buffer_TSA_TSL")
     begin
         // Ensure BLOB fields are loaded
         ChangeRec.CalcFields("Old Data", "New Data");

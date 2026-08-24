@@ -1,6 +1,6 @@
-table 50008 "DD Agent Cue"
+table 72930458 "Agent Cue_TSA_TSL"
 {
-    Caption = 'Data Debugger Agent Cue';
+    Caption = 'Troubleshooting Assistance Agent Cue';
     DataClassification = SystemMetadata;
     Extensible = false; // Required: this table backs a ConfigurationDialog page.
 
@@ -17,21 +17,21 @@ table 50008 "DD Agent Cue"
             Caption = 'Total Captured Changes';
             FieldClass = FlowField;
             Editable = false;
-            CalcFormula = count("Data Debugger Change Buffer");
+            CalcFormula = count("Change Buffer_TSA_TSL");
         }
         field(3; "Error Changes"; Integer)
         {
             Caption = 'Captured Errors';
             FieldClass = FlowField;
             Editable = false;
-            CalcFormula = count("Data Debugger Change Buffer" where("Change Type" = const(Error)));
+            CalcFormula = count("Change Buffer_TSA_TSL" where("Change Type" = const(Error)));
         }
         field(4; "Temporary Table Changes"; Integer)
         {
             Caption = 'Temporary Table Changes';
             FieldClass = FlowField;
             Editable = false;
-            CalcFormula = count("Data Debugger Change Buffer" where("Is Temporary Table" = const(true)));
+            CalcFormula = count("Change Buffer_TSA_TSL" where("Is Temporary Table" = const(true)));
         }
         field(10; "User Security ID"; Guid)
         {

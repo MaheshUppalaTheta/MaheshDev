@@ -1,6 +1,6 @@
-table 50001 "Data Debugger Setup"
+table 72930451 "Setup_TSA_TSL"
 {
-    Caption = 'Data Debugger Setup';
+    Caption = 'Troubleshooting Assistance Setup';
     DataClassification = SystemMetadata;
 
     fields
@@ -9,7 +9,7 @@ table 50001 "Data Debugger Setup"
         {
             Caption = 'Primary Key';
         }
-        field(12; "Table Capture Scope"; Enum "DD Capture Scope")
+        field(12; "Table Capture Scope"; Enum "Capture Scope_TSA_TSL")
         {
             Caption = 'Table Capture Scope';
             InitValue = "All Tables";
@@ -60,9 +60,9 @@ table 50001 "Data Debugger Setup"
         }
     }
 
-    procedure GetSetup(): Record "Data Debugger Setup"
+    procedure GetSetup(): Record "Setup_TSA_TSL"
     var
-        Setup: Record "Data Debugger Setup";
+        Setup: Record "Setup_TSA_TSL";
     begin
         if not Setup.Get('') then begin
             Setup.Init();

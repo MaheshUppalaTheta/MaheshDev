@@ -1,6 +1,6 @@
-page 50000 "Data Debugger"
+page 72930450 "Troubleshooting_TSA_TSL"
 {
-    Caption = 'Data Debugger';
+    Caption = 'Troubleshooting Assistance';
     PageType = Card;
     ApplicationArea = All;
     UsageCategory = Tasks;
@@ -123,7 +123,7 @@ page 50000 "Data Debugger"
 
                 trigger OnAction()
                 var
-                    SetupPage: Page "Data Debugger Setup";
+                    SetupPage: Page "Setup_TSA_TSL";
 
                 begin
 
@@ -200,7 +200,7 @@ page 50000 "Data Debugger"
 
                 trigger OnAction()
                 var
-                    SessionManager: Codeunit "Data Debugger Session Manager";
+                    SessionManager: Codeunit "Session Manager_TSA_TSL";
                 begin
                     SessionManager.ShowResults();
                 end;
@@ -214,7 +214,7 @@ page 50000 "Data Debugger"
 
                 trigger OnAction()
                 var
-                    LiveStatsPage: Page "Data Debugger Live Stats";
+                    LiveStatsPage: Page "Live Stats_TSA_TSL";
                 begin
                     LiveStatsPage.RunModal();
                 end;
@@ -222,24 +222,24 @@ page 50000 "Data Debugger"
 
             action(CreateAgent)
             {
-                Caption = 'Create Data Debugger Agent';
-                ToolTip = 'Create and activate the Data Debugger Agent. Requires the Data Debugger Agent Copilot capability to be enabled and billing configured.';
+                Caption = 'Create Troubleshooting Assistance Agent';
+                ToolTip = 'Create and activate the Troubleshooting Assistance Agent. Requires the Troubleshooting Assistance Agent Copilot capability to be enabled and billing configured.';
                 Image = Sparkle;
 
                 trigger OnAction()
                 var
-                    AgentProvision: Codeunit "DD Agent Provision";
+                    AgentProvision: Codeunit "Agent Provision_TSA_TSL";
                 begin
-                    if not Confirm('Create and activate the Data Debugger Agent now?', false) then
+                    if not Confirm('Create and activate the Troubleshooting Assistance Agent now?', false) then
                         exit;
-                    AgentProvision.CreateDataDebuggerAgent();
+                    AgentProvision.CreateTroubleshootingAgent();
                 end;
             }
         }
     }
 
     var
-        SessionManager: Codeunit "Data Debugger Session Manager";
+        SessionManager: Codeunit "Session Manager_TSA_TSL";
         StatusText: Text;
         CurrentRunIdText: Text;
         RecordUserId: Code[50];
@@ -294,7 +294,7 @@ page 50000 "Data Debugger"
 
     local procedure UpdateLiveStats()
     var
-        Stats: Record "Data Debugger Live Stats";
+        Stats: Record "Live Stats_TSA_TSL";
     begin
         if not SessionManager.IsActive() then begin
             ClearLiveStats();
