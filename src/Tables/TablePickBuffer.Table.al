@@ -1,6 +1,6 @@
 table 72930456 "Table Pick Buffer_TSA_TSL"
 {
-    Caption = 'Troubleshooting Assistance Table Pick Buffer';
+    Caption = 'Troubleshooting Assistant Table Pick Buffer';
     TableType = Temporary;
     DataClassification = SystemMetadata;
 

@@ -29,7 +29,7 @@ codeunit 72930456 "Agent Factory_TSA_TSL" implements IAgentFactory
     var
         ModuleInfo: ModuleInfo;
     begin
-        // Default the agent to the dedicated Troubleshooting Assistance Agent role center.
+        // Default the agent to the dedicated Troubleshooting Assistant Agent role center.
         NavApp.GetCurrentModuleInfo(ModuleInfo);
         TempAllProfile."Profile ID" := 'Agent Profile_TSA_TSL';
         TempAllProfile."App ID" := ModuleInfo.Id();
@@ -40,8 +40,8 @@ codeunit 72930456 "Agent Factory_TSA_TSL" implements IAgentFactory
     var
         ModuleInfo: ModuleInfo;
     begin
-        // Grant the agent the Troubleshooting Assistance permission set so it can read the captured data and open
-        // the Troubleshooting Assistance pages.
+        // Grant the agent the Troubleshooting Assistant permission set so it can read the captured data and open
+        // the Troubleshooting Assistant pages.
         NavApp.GetCurrentModuleInfo(ModuleInfo);
         TempAccessControlBuffer."Role ID" := 'Full Access_TSA_TSL';
         TempAccessControlBuffer."App ID" := ModuleInfo.Id();

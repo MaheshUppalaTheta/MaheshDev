@@ -1,6 +1,6 @@
 table 72930452 "Table Filter_TSA_TSL"
 {
-    Caption = 'Troubleshooting Assistance Table Filter';
+    Caption = 'Troubleshooting Assistant Table Filter';
     DataClassification = SystemMetadata;
 
     fields

@@ -1,6 +1,6 @@
 codeunit 72930461 "Recording Tests_TSA_TSL"
 {
-    // Automated tests for Troubleshooting Assistance user-based recording.
+    // Automated tests for Troubleshooting Assistant user-based recording.
     //
     // Run under the BC test runner (AL Test Tool / AL Test Runner extension, or headless via
     // BcContainerHelper in CI). They exercise the real capture path: start a recording, write to a

@@ -1,6 +1,6 @@
 permissionset 72930451 "Reader_TSA_TSL"
 {
-    Caption = 'Troubleshooting Assistance - Reader';
+    Caption = 'Troubleshooting Assistant - Reader';
     Assignable = true;
     Permissions =
         tabledata "Change Buffer_TSA_TSL" = R,

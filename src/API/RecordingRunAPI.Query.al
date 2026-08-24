@@ -1,7 +1,7 @@
 // query 72930450 "Recording Run API_TSA_TSL"
 // {
 //     QueryType = API;
-//     Caption = 'Troubleshooting Assistance Recording Run';
+//     Caption = 'Troubleshooting Assistant Recording Run';
 //     APIPublisher = 'theta';
 //     APIGroup = 'troubleshootingAssistance';
 //     APIVersion = 'v1.0';

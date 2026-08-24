@@ -1,6 +1,6 @@
 page 72930451 "Results_TSA_TSL"
 {
-    Caption = 'Troubleshooting Assistance Results';
+    Caption = 'Troubleshooting Assistant Results';
     PageType = List;
     SourceTable = "Change Buffer_TSA_TSL";
     Editable = true;
@@ -484,10 +484,10 @@ page 72930451 "Results_TSA_TSL"
             until Rec.Next() = 0;
         end;
 
-        ExcelBuffer.CreateNewBook('Troubleshooting Assistance Results');
+        ExcelBuffer.CreateNewBook('Troubleshooting Assistant Results');
         ExcelBuffer.WriteSheet('Results', CompanyName(), UserId());
         ExcelBuffer.CloseBook();
-        ExcelBuffer.SetFriendlyFilename('TroubleshootingAssistanceResults_' + Format(CurrentRunId));
+        ExcelBuffer.SetFriendlyFilename('TroubleshootingAssistantResults_' + Format(CurrentRunId));
         ExcelBuffer.OpenExcel();
 
         Message('Results exported to Excel successfully.');
@@ -528,7 +528,7 @@ page 72930451 "Results_TSA_TSL"
         OutStream.WriteText(JsonText);
         TempBlob.CreateInStream(InStream);
 
-        FileName := StrSubstNo('TroubleshootingAssistanceResults_%1.json', Format(CurrentRunId));
+        FileName := StrSubstNo('TroubleshootingAssistantResults_%1.json', Format(CurrentRunId));
         DownloadFromStream(InStream, 'Export Results', '', 'JSON Files (*.json)|*.json', FileName);
 
         Message('Results exported to JSON successfully.');

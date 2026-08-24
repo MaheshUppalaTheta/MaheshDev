@@ -1,11 +1,11 @@
 page 72930460 "Agent Role Center_TSA_TSL"
 {
-    Caption = 'Troubleshooting Assistance Agent';
+    Caption = 'Troubleshooting Assistant Agent';
     PageType = RoleCenter;
 
-    // Dedicated, minimal Role Center for the Troubleshooting Assistance Agent. Keeping the surface small reduces
+    // Dedicated, minimal Role Center for the Troubleshooting Assistant Agent. Keeping the surface small reduces
     // contextual noise for the agent and — because agents navigate only via available actions and
-    // links (no Tell Me) — guarantees the agent can reach the Troubleshooting Assistance Changes list.
+    // links (no Tell Me) — guarantees the agent can reach the Troubleshooting Assistant Changes list.
     layout
     {
         area(RoleCenter)
@@ -24,8 +24,8 @@ page 72930460 "Agent Role Center_TSA_TSL"
         {
             action(ChangesEmbed)
             {
-                Caption = 'Troubleshooting Assistance Changes';
-                ToolTip = 'View the database changes captured by Troubleshooting Assistance.';
+                Caption = 'Troubleshooting Assistant Changes';
+                ToolTip = 'View the database changes captured by Troubleshooting Assistant.';
                 RunObject = page "Change Entry Preview_TSA_TSL";
                 ApplicationArea = All;
             }
@@ -33,21 +33,21 @@ page 72930460 "Agent Role Center_TSA_TSL"
 
         area(Sections)
         {
-            group(TroubleshootingAssistance)
+            group(TroubleshootingAssistant)
             {
-                Caption = 'Troubleshooting Assistance';
+                Caption = 'Troubleshooting Assistant';
 
                 action(Changes)
                 {
-                    Caption = 'Troubleshooting Assistance Changes';
-                    ToolTip = 'View the database changes captured by Troubleshooting Assistance.';
+                    Caption = 'Troubleshooting Assistant Changes';
+                    ToolTip = 'View the database changes captured by Troubleshooting Assistant.';
                     RunObject = page "Change Entry Preview_TSA_TSL";
                     ApplicationArea = All;
                 }
                 action(ControlPanel)
                 {
-                    Caption = 'Troubleshooting Assistance';
-                    ToolTip = 'Open the Troubleshooting Assistance recording control panel.';
+                    Caption = 'Troubleshooting Assistant';
+                    ToolTip = 'Open the Troubleshooting Assistant recording control panel.';
                     RunObject = page "Troubleshooting_TSA_TSL";
                     ApplicationArea = All;
                 }

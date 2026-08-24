@@ -1,13 +1,13 @@
 page 72930461 "Agent Activities_TSA_TSL"
 {
-    Caption = 'Troubleshooting Assistance Activities';
+    Caption = 'Troubleshooting Assistant Activities';
     PageType = CardPart;
     SourceTable = "Agent Cue_TSA_TSL";
     Editable = false;
     ApplicationArea = All;
 
     // Activities part for the agent Role Center. Each cue ("queue") shows a live count and drills
-    // into the Troubleshooting Assistance Changes list, mirroring the standard "Sales Order Activities" pattern.
+    // into the Troubleshooting Assistant Changes list, mirroring the standard "Sales Order Activities" pattern.
     layout
     {
         area(Content)

@@ -1,6 +1,6 @@
 page 72930450 "Troubleshooting_TSA_TSL"
 {
-    Caption = 'Troubleshooting Assistance';
+    Caption = 'Troubleshooting Assistant';
     PageType = Card;
     ApplicationArea = All;
     UsageCategory = Tasks;
@@ -222,15 +222,15 @@ page 72930450 "Troubleshooting_TSA_TSL"
 
             action(CreateAgent)
             {
-                Caption = 'Create Troubleshooting Assistance Agent';
-                ToolTip = 'Create and activate the Troubleshooting Assistance Agent. Requires the Troubleshooting Assistance Agent Copilot capability to be enabled and billing configured.';
+                Caption = 'Create Troubleshooting Assistant Agent';
+                ToolTip = 'Create and activate the Troubleshooting Assistant Agent. Requires the Troubleshooting Assistant Agent Copilot capability to be enabled and billing configured.';
                 Image = Sparkle;
 
                 trigger OnAction()
                 var
                     AgentProvision: Codeunit "Agent Provision_TSA_TSL";
                 begin
-                    if not Confirm('Create and activate the Troubleshooting Assistance Agent now?', false) then
+                    if not Confirm('Create and activate the Troubleshooting Assistant Agent now?', false) then
                         exit;
                     AgentProvision.CreateTroubleshootingAgent();
                 end;

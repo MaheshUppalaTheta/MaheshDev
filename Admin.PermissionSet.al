@@ -1,6 +1,6 @@
 permissionset 72930453 "Admin_TSA_TSL"
 {
-    Caption = 'Troubleshooting Assistance - Admin';
+    Caption = 'Troubleshooting Assistant - Admin';
     Assignable = true;
     IncludedPermissionSets = "Operator_TSA_TSL";
     Permissions =

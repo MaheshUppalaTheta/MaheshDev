@@ -1,6 +1,6 @@
 table 72930454 "Analysis Buffer_TSA_TSL"
 {
-    Caption = 'Troubleshooting Assistance Analysis Buffer';
+    Caption = 'Troubleshooting Assistant Analysis Buffer';
     TableType = Temporary;
     DataClassification = SystemMetadata;
 

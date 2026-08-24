@@ -1,6 +1,6 @@
 table 72930451 "Setup_TSA_TSL"
 {
-    Caption = 'Troubleshooting Assistance Setup';
+    Caption = 'Troubleshooting Assistant Setup';
     DataClassification = SystemMetadata;
 
     fields

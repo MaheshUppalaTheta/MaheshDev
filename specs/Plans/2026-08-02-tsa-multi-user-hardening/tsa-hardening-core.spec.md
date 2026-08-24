@@ -1,4 +1,4 @@
-# Spec A: TroubleShooting Assitance Hardening Core
+# Spec A: TroubleShooting Assistant Hardening Core
 
 Date: 2026-08-02
 Status: Approved

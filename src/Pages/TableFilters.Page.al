@@ -1,6 +1,6 @@
 page 72930455 "Table Filters_TSA_TSL"
 {
-    Caption = 'Troubleshooting Assistance Table Filters';
+    Caption = 'Troubleshooting Assistant Table Filters';
     PageType = List;
     SourceTable = "Table Filter_TSA_TSL";
     ApplicationArea = All;

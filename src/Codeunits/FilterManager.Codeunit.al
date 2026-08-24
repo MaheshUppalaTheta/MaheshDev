@@ -162,7 +162,7 @@ codeunit 72930452 "Filter Manager_TSA_TSL"
         ExcludedTables[9] := 2000000111; // User Session Log
         ExcludedTables[10] := Database::"Scheduled Task";
 
-        // Exclude Troubleshooting Assistance's own tables to prevent recursive recording
+        // Exclude Troubleshooting Assistant's own tables to prevent recursive recording
         ExcludedTables[11] := Database::"Change Buffer_TSA_TSL";
         ExcludedTables[12] := Database::"Setup_TSA_TSL";
         ExcludedTables[13] := Database::"Table Filter_TSA_TSL";

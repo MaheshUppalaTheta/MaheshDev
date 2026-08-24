@@ -1,6 +1,6 @@
 table 72930455 "Field Select Buffer_TSA_TSL"
 {
-    Caption = 'Troubleshooting Assistance Table Filter Field';
+    Caption = 'Troubleshooting Assistant Table Filter Field';
     DataClassification = SystemMetadata;
 
     fields

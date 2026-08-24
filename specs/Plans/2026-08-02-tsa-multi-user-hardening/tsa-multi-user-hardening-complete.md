@@ -4,7 +4,7 @@ Three hardening specs (A: Core Correctness, B: Compliance, C: Security & Tests) 
 
 **AL Extension Summary:**
 - Extension Type: Codeunit + Table + Page extensions (no base modifications)
-- Objects extended: TroubleShooting Assitance Session Manager, Event Handlers, Filter Manager, Context Manager, Setup, Recording State, Change Buffer, Transactions page
+- Objects extended: TroubleShooting Assistant Session Manager, Event Handlers, Filter Manager, Context Manager, Setup, Recording State, Change Buffer, Transactions page
 - Event Architecture: Global Trigger automatic subscribers (OnAfterOnGlobalInsert/Modify/Delete/Rename) — no manual BindSubscription
 - AL-Go Compliance: ✅ App and Test projects properly structured
 - AppSource Readiness: ✅ app.json metadata populated, allowDebugging false, role-based permissionsets, no demo subscriber in production
@@ -19,14 +19,14 @@ Three hardening specs (A: Core Correctness, B: Compliance, C: Security & Tests) 
 
 | Object | ID | Change |
 |--------|----|--------|
-| TroubleShooting Assitance Session Manager | 50000 | SetAutoCalcFields before SetRange in GetChanges; per-row CalcFields removed |
-| TroubleShooting Assitance Event Handlers | 50001 | xRecRef.Open() before ShouldCaptureModification; dead IsReadable removed; permission guard restructured |
-| TroubleShooting Assitance Filter Manager | 50002 | No change (used as-is; ReloadSetup() already public) |
-| TroubleShooting Assitance Context Manager | 50003 | GetClientType() returns Format(CurrentClientType()) not SessionId() comparison |
-| TroubleShooting Assitance Setup (table) | 50001 | DataClassification = SystemMetadata (cascade); GetSetup() returns init'd default |
+| TroubleShooting Assistant Session Manager | 50000 | SetAutoCalcFields before SetRange in GetChanges; per-row CalcFields removed |
+| TroubleShooting Assistant Event Handlers | 50001 | xRecRef.Open() before ShouldCaptureModification; dead IsReadable removed; permission guard restructured |
+| TroubleShooting Assistant Filter Manager | 50002 | No change (used as-is; ReloadSetup() already public) |
+| TroubleShooting Assistant Context Manager | 50003 | GetClientType() returns Format(CurrentClientType()) not SessionId() comparison |
+| TroubleShooting Assistant Setup (table) | 50001 | DataClassification = SystemMetadata (cascade); GetSetup() returns init'd default |
 | DD Recording State (table) | 50003 | DataClassification overrides on fields 4, 5, 6; GetState() returns init'd default |
-| TroubleShooting Assitance Change Buffer (table) | 50004 | DataClassification overrides on fields 7, 8, 9, 11, 12, 16 |
-| TroubleShooting Assitance Transactions (page) | 50010 | InnerBuffer fix for nested cursor; ToolTip on Transaction ID; TimeRange per-row |
+| TroubleShooting Assistant Change Buffer (table) | 50004 | DataClassification overrides on fields 7, 8, 9, 11, 12, 16 |
+| TroubleShooting Assistant Transactions (page) | 50010 | InnerBuffer fix for nested cursor; ToolTip on Transaction ID; TimeRange per-row |
 | DD Agent Install (codeunit) | 50100 | OnInstallAppPerCompany seeds Setup + RecordingState singletons; LearnMoreUrl fixed |
 | app.json | — | brief, description, privacyStatement, EULA, help, url populated; allowDebugging false |
 | DD-Reader (permissionset) | 50001 | New — R on capture tables; execute display pages |

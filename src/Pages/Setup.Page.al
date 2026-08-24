@@ -1,6 +1,6 @@
 page 72930454 "Setup_TSA_TSL"
 {
-    Caption = 'Troubleshooting Assistance Setup';
+    Caption = 'Troubleshooting Assistant Setup';
     PageType = Card;
     SourceTable = "Setup_TSA_TSL";
     ApplicationArea = All;

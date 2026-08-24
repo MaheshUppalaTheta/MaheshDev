@@ -1,6 +1,6 @@
-# Troubleshooting Assistance — Knowledge Reference
+# Troubleshooting Assistant — Knowledge Reference
 
-Upload this file to the **Knowledge** section of your Copilot Studio agent. It provides reference data the agent needs when analyzing Troubleshooting Assistance change entries.
+Upload this file to the **Knowledge** section of your Copilot Studio agent. It provides reference data the agent needs when analyzing Troubleshooting Assistant change entries.
 
 ---
 
@@ -40,7 +40,7 @@ Use these to filter change entries by table when investigating specific areas.
 
 ## Change Entry Fields
 
-Each Troubleshooting Assistance change entry contains these fields:
+Each Troubleshooting Assistant change entry contains these fields:
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -110,7 +110,7 @@ Call stacks are listed from innermost (top) to outermost (bottom). Example:
 "Sales Line"(Table 37).UpdateVATOnLines line 193 - Base Application by Microsoft
 "Release Sales Document"(CodeUnit 414).CalcAndUpdateVATOnLines line 9 - Base Application by Microsoft
 "Sales-Post"(CodeUnit 80).CheckAndUpdate line 48 - Base Application by Microsoft
-"Demo Bad Extension"(CodeUnit 72930464).OnBeforePostSalesDoc line 12 - TroubleShooting Assistance by Theta Systems Limited
+"Demo Bad Extension"(CodeUnit 72930464).OnBeforePostSalesDoc line 12 - TroubleShooting Assistant by Theta Systems Limited
 ```
 
 Reading this:

@@ -1,6 +1,6 @@
 table 72930457 "Recording State_TSA_TSL"
 {
-    Caption = 'Troubleshooting Assistance Recording State';
+    Caption = 'Troubleshooting Assistant Recording State';
     DataClassification = SystemMetadata;
 
     // Singleton holding the cross-session recording state. Because capture now runs in the

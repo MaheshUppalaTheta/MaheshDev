@@ -1,7 +1,7 @@
 page 72930463 "Change Entry API_TSA_TSL"
 {
     PageType = API;
-    Caption = 'Troubleshooting Assistance Change Entry';
+    Caption = 'Troubleshooting Assistant Change Entry';
     APIPublisher = 'theta';
     APIGroup = 'troubleshootingAssistance';
     APIVersion = 'v1.0';
@@ -14,7 +14,7 @@ page 72930463 "Change Entry API_TSA_TSL"
     InsertAllowed = false;
     ModifyAllowed = false;
     DeleteAllowed = false;
-    AboutText = 'API endpoint exposing change entries captured by Troubleshooting Assistance. Each entry represents a change to a record in the system, including metadata such as the user who made the change, the time of change, and the old/new values.';
+    AboutText = 'API endpoint exposing change entries captured by Troubleshooting Assistant. Each entry represents a change to a record in the system, including metadata such as the user who made the change, the time of change, and the old/new values.';
     layout
     {
         area(Content)

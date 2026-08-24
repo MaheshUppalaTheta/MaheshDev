@@ -1,6 +1,6 @@
 table 72930450 "Change Buffer_TSA_TSL"
 {
-    Caption = 'Troubleshooting Assistance Change Buffer';
+    Caption = 'Troubleshooting Assistant Change Buffer';
     DataClassification = SystemMetadata;
 
     fields

@@ -4,14 +4,14 @@ page 72930464 "Change Entry Preview_TSA_TSL"
     // Old/New values and the call stack are exposed as COLUMNS (populated in OnAfterGetRecord),
     // not as actions, so the agent can read them directly without invoking an action per row.
     PageType = List;
-    Caption = 'Troubleshooting Assistance Change Entries';
+    Caption = 'Troubleshooting Assistant Change Entries';
     SourceTable = "Change Buffer_TSA_TSL";
     ApplicationArea = All;
     UsageCategory = Lists;
     Editable = false;
     SourceTableView = sorting("Entry No.") order(descending);
-    AboutTitle = 'Troubleshooting Assistance Change Entries';
-    AboutText = 'Database changes captured by Troubleshooting Assistance, including user/session context and the old/new values and call stack as readable columns.';
+    AboutTitle = 'Troubleshooting Assistant Change Entries';
+    AboutText = 'Database changes captured by Troubleshooting Assistant, including user/session context and the old/new values and call stack as readable columns.';
 
     layout
     {
@@ -110,7 +110,7 @@ page 72930464 "Change Entry Preview_TSA_TSL"
             action(DiagnoseWithAgent)
             {
                 Caption = 'Diagnose Latest Run with Agent';
-                ToolTip = 'Create an agent task asking the Troubleshooting Assistance Agent to analyze the most recent recording run and report the likely root cause.';
+                ToolTip = 'Create an agent task asking the Troubleshooting Assistant Agent to analyze the most recent recording run and report the likely root cause.';
                 Image = Sparkle;
                 ApplicationArea = All;
 

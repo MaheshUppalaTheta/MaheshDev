@@ -1,4 +1,4 @@
-# Troubleshooting Assistance – System Overview
+# Troubleshooting Assistant – System Overview
 
 ## Product Snapshot
 - **Purpose:** Capture Business Central database activity in near real time, enrich each change with context, and surface insights that help troubleshoot, optimize, and audit business processes.
@@ -17,7 +17,7 @@
 
 ## Operational Flow
 1. **Setup (optional):** Use `Setup_TSA_TSL` + `Table Filter` pages to configure include/exclude lists, field filtering, change thresholds, and throttling caps.
-2. **Recording Lifecycle:** On `Troubleshooting Assistance` (page 72930450) choose the user in **Record User** (defaults to you), click **Start Recording** (writes recording state, clears the previous run's buffer) → the recorded user performs the business process (in their own session, anywhere) → **Stop Recording** (flips the state off, opens results).
+2. **Recording Lifecycle:** On `Troubleshooting Assistant` (page 72930450) choose the user in **Record User** (defaults to you), click **Start Recording** (writes recording state, clears the previous run's buffer) → the recorded user performs the business process (in their own session, anywhere) → **Stop Recording** (flips the state off, opens results).
 3. **Event Capture:** The automatic global-trigger subscribers fire in the acting user's session. Each first checks `Session Manager.ShouldCapture()` (recording active **and** the session belongs to the selected user, matched on User Security ID), then `Filter Manager` (table allow/deny, `CanCaptureNow()`, optional `ShouldCaptureModification()`) before serializing old/new JSON and delegating to `Session Manager.AddChange()`.
 4. **Context Injection:** Session Manager invokes context manager hooks so every `Change Buffer` row contains user details, transaction grouping, call stack, client type, and trigger source text.
 5. **Exploration & Analysis:**
@@ -41,16 +41,16 @@
 - User/session/company, client type, transaction IDs, and textual call-stack traces are persisted per entry, enabling forensic debugging and compliance-ready audit trails.
 
 ### Call-Stack & Error Capture
-Troubleshooting Assistance captures two distinct kinds of call stack, both stored in the `Call Stack` BLOB of `Change Buffer` (72930450):
+Troubleshooting Assistant captures two distinct kinds of call stack, both stored in the `Call Stack` BLOB of `Change Buffer` (72930450):
 
-**1. Live call stack (every change).** For every Insert/Modify/Delete/Rename, `Context Manager.CaptureCallStack()` records `SessionInformation.Callstack()` — the AL call stack at the moment of the database write — and derives a human-readable `Trigger Source` label (Database Insert/Modify/Delete/Rename) from it. This is the always-on path for normal operations. (The stored stack includes Troubleshooting Assistance's own capture frames at the top.)
+**1. Live call stack (every change).** For every Insert/Modify/Delete/Rename, `Context Manager.CaptureCallStack()` records `SessionInformation.Callstack()` — the AL call stack at the moment of the database write — and derives a human-readable `Trigger Source` label (Database Insert/Modify/Delete/Rename) from it. This is the always-on path for normal operations. (The stored stack includes Troubleshooting Assistant's own capture frames at the top.)
 
 **2. Error origin call stack (when the recorded user's process fails).** When a runtime error occurs in the recorded session, Business Central writes an `Error Message` record (table 700) whose `Error Call Stack` field holds the *actual* AL stack where the error was raised. The global **Insert** subscriber (`CaptureInsert`) detects this table specifically and:
 - Reads the `Error Call Stack` BLOB straight from the `RecRef` buffer (`TempBlob.FromFieldRef`). It reads with `TextEncoding::Windows` and `Type Helper.ReadAsTextWithSeparator(..., LFSeparator())` to reconstruct the full **multi-line** stack — matching exactly how the platform's own `Error Message.SetErrorCallStack`/`GetErrorCallStack` store and read the field. (It does **not** call `ErrorMessage.GetErrorCallStack()`, because that method does a `CalcFields` that re-reads from the database by primary key, and the row is not yet queryable from inside the insert trigger.)
 - Logs the entry with **Change Type = `Error`** (enum value 4) instead of `Insert`.
 - Passes the decoded stack through `Session Manager.AddChange(... CallStackOverride)` so the persisted `Call Stack` reflects the error's true origin rather than the synthetic capture-path stack. If the field is empty, a marker string is stored instead — an `Error` entry deliberately never falls back to the live code-execution call stack.
 
-This means an `Error` row in the Results grid points at *where the failure came from*, not where Troubleshooting Assistance intercepted it — the key value for diagnosing a failed process.
+This means an `Error` row in the Results grid points at *where the failure came from*, not where Troubleshooting Assistant intercepted it — the key value for diagnosing a failed process.
 
 **3. Session last-error capture (at Stop Recording).** Path 2 only fires when an `Error Message` row is *inserted*. A plain runtime error (`Error(...)`) raised by the recorded process does not necessarily write to table 700, so it would otherwise go unrecorded. To cover this, `Start Recording` calls `ClearLastError()` and `Stop Recording` calls `CaptureLastSessionError()`: if `GetLastErrorText()` is non-empty at stop, it logs one final entry — **Change Type = `Error`**, `Table ID = 0` (shown as **"Session Runtime Error"**), `New Data` = `{"ErrorMessage": <text>}`, and `Call Stack` = `GetLastErrorCallStack()` (passed as the override). The capture happens *before* the rollback-safe flush and before `Is Recording` is flipped off, so it is included in the run. **Scope:** `GetLastError*` is session-local, so this reliably catches errors when recording **yourself** (controller session = recorded session); when recording another user in Direct mode, the error occurs in that user's session and is not visible at stop.
 
@@ -72,7 +72,7 @@ This means an `Error` row in the Results grid points at *where the failure came 
 - **Storage:** The Change Buffer is a persisted database table — captured data survives the session and a crash, and is cleared only at the start of the next recording (the Analysis Buffer remains temporary/in-memory). Payload BLOBs store JSON/call-stack text via streams.
 
 ## Setup Configuration Steps
-1. **Access Setup:** Open Troubleshooting Assistance (page 72930450) → click **Setup** → opens Setup Card (page 72930454).
+1. **Access Setup:** Open Troubleshooting Assistant (page 72930450) → click **Setup** → opens Setup Card (page 72930454).
 2. **Table Filtering (Capture Scope):**
    - Set **Table Capture Scope** on the Setup card: **All Tables** (default), **Only Selected Tables** (whitelist), or **All Except Selected Tables** (blacklist).
    - Click **Table Filters** action → opens Table Filters List (page 72930455).
@@ -97,7 +97,7 @@ This means an `Error` row in the Results grid points at *where the failure came 
 ## User Interfaces & Navigation
 | Page | Purpose |
 | --- | --- |
-| `Troubleshooting Assistance` (Card 72930450) | Start/stop control, status banner, live stats preview, links to setup and live analysis. |
+| `Troubleshooting Assistant` (Card 72930450) | Start/stop control, status banner, live stats preview, links to setup and live analysis. |
 | `Results_TSA_TSL` (List 72930451) | Filterable grid with field/context drilldowns, table/transaction summaries, exports, and advanced analysis launch. |
 | `Live Stats_TSA_TSL` (Card 72930459) | Auto-refreshing aggregates, most-active tables/users, quick links to analysis/results. |
 | `Advanced Analysis_TSA_TSL` (List 72930458) | Runs analysis engine, filters by type/severity/category, exports findings, and shows recommendations. |
@@ -207,7 +207,7 @@ This means an `Error` row in the Results grid points at *where the failure came 
 ## Page Catalog with Actions
 | Page | Object ID | Type | Key Actions | Navigation Target |
 | --- | --- | --- | --- | --- |
-| Troubleshooting Assistance | 72930450 | Card | Record User (select), Start Recording, Stop Recording, Setup, Live Analysis, Refresh Stats | Main entry point; pick the user to record (User-table lookup, defaults to you), then start/stop; launches Setup (72930454), Live Stats (72930459) |
+| Troubleshooting Assistant | 72930450 | Card | Record User (select), Start Recording, Stop Recording, Setup, Live Analysis, Refresh Stats | Main entry point; pick the user to record (User-table lookup, defaults to you), then start/stop; launches Setup (72930454), Live Stats (72930459) |
 | Results_TSA_TSL | 72930451 | List | View Field Changes, View Call Stack, Group by Table, Group by Transaction, Export to Excel/JSON, Advanced Analysis, Clear Filters | Opens Field Changes (72930452), Context Details (72930456), Table Summary (72930453), Transactions (72930457), Advanced Analysis (72930458). The **Table Filter** field has a drill-down (`Table Pick_TSA_TSL`, 72930466, backed by `Table Pick Buffer_TSA_TSL`, 72930456) listing the tables present in the results with operation counts; picking one filters the grid to that table by Table ID. The captured Call Stack contains the real AL stack via `SessionInformation.Callstack()`. |
 | Field Changes_TSA_TSL | 72930452 | List | Show Only Changed Fields, Export to Excel, Copy to Clipboard | Parses Old/New JSON, displays field-by-field diff in Name/Value Buffer |
 | Table Summary_TSA_TSL | 72930453 | List | View Table Changes | Aggregates changes by table, drills back to Results filtered by table |
@@ -267,7 +267,7 @@ These OData v4 API objects expose the persisted capture data for external consum
 
 ### Excluded System Tables (Hard-Coded in Filter Manager)
 - Change Log Entry (497), Change Log Setup (498), Change Log Entry (Archive) (2000000053), Activity Log (2000000110), Record Link (2000000068), Delete Log (2000000112), Session Event, System Change Log (2000000168), User Session Log (2000000111), Scheduled Task
-- **Self-Exclusion:** the extension's **entire reserved object range 72930450-72930499** (per `app.json` idRanges) is excluded to prevent recursion. This is a range check, not a per-table list, so every current and future Troubleshooting Assistance table is covered automatically — including `Recording State_TSA_TSL` (72930457), which is modified on every start/stop and was previously captured because the old hard-coded list only covered 72930450-72930454.
+- **Self-Exclusion:** the extension's **entire reserved object range 72930450-72930499** (per `app.json` idRanges) is excluded to prevent recursion. This is a range check, not a per-table list, so every current and future Troubleshooting Assistant table is covered automatically — including `Recording State_TSA_TSL` (72930457), which is modified on every start/stop and was previously captured because the old hard-coded list only covered 72930450-72930454.
 
 ### Performance Considerations
 - **Large Sessions:** 10,000+ changes may slow UI refresh; use table filters or shorter recording windows.

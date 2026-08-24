@@ -396,7 +396,7 @@ page 72930458 "Advanced Analysis_TSA_TSL"
         ExcelBuffer.CreateNewBook('Advanced Analysis Results');
         ExcelBuffer.WriteSheet('Analysis', CompanyName(), UserId());
         ExcelBuffer.CloseBook();
-        ExcelBuffer.SetFriendlyFilename('TroubleshootingAssistanceAnalysis_' + Format(CurrentDateTime(), 0, '<Year4><Month,2><Day,2>_<Hours24><Minutes,2>'));
+        ExcelBuffer.SetFriendlyFilename('TroubleshootingAssistantAnalysis_' + Format(CurrentDateTime(), 0, '<Year4><Month,2><Day,2>_<Hours24><Minutes,2>'));
         ExcelBuffer.OpenExcel();
 
         Message('Analysis results exported to Excel successfully.');

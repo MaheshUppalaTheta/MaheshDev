@@ -66,7 +66,7 @@ codeunit 72930450 "Session Manager_TSA_TSL"
 
         InvalidateCache();
 
-        Message('Troubleshooting Assistance recording started for user %1. Run ID: %2', RecUserId, NewRunId);
+        Message('Troubleshooting Assistant recording started for user %1. Run ID: %2', RecUserId, NewRunId);
         exit(NewRunId);
     end;
 
@@ -74,7 +74,7 @@ codeunit 72930450 "Session Manager_TSA_TSL"
     var
         State: Record "Recording State_TSA_TSL";
         TempBuffer: Record "Change Buffer_TSA_TSL" temporary;
-        TroubleshootingAssistanceResults: Page "Results_TSA_TSL";
+        TroubleshootingAssistantResults: Page "Results_TSA_TSL";
         ContextManager: Codeunit "Context Manager_TSA_TSL";
         RunId: Guid;
         StartTime: DateTime;
@@ -108,12 +108,12 @@ codeunit 72930450 "Session Manager_TSA_TSL"
         // End transaction context
         ContextManager.EndTransaction();
 
-        Message('Troubleshooting Assistance recording stopped. Captured %1 changes.', GetTotalChangeCount(RunId));
+        Message('Troubleshooting Assistant recording stopped. Captured %1 changes.', GetTotalChangeCount(RunId));
 
         // Open results page with captured data (persisted; survives the session).
         // GetChanges(TempBuffer);
-        // TroubleshootingAssistanceResults.SetData(TempBuffer, RunId, StartTime);
-        // TroubleshootingAssistanceResults.RunModal();
+        // TroubleshootingAssistantResults.SetData(TempBuffer, RunId, StartTime);
+        // TroubleshootingAssistantResults.RunModal();
     end;
 
     local procedure CaptureLastSessionError()
@@ -431,12 +431,12 @@ codeunit 72930450 "Session Manager_TSA_TSL"
     var
         State: Record "Recording State_TSA_TSL";
         TempBuffer: Record "Change Buffer_TSA_TSL" temporary;
-        TroubleshootingAssistanceResults: Page "Results_TSA_TSL";
+        TroubleshootingAssistantResults: Page "Results_TSA_TSL";
     begin
         State := State.GetState();
         GetChanges(TempBuffer);
-        TroubleshootingAssistanceResults.SetData(TempBuffer, State."Run ID", State."Start Time");
-        TroubleshootingAssistanceResults.RunModal();
+        TroubleshootingAssistantResults.SetData(TempBuffer, State."Run ID", State."Start Time");
+        TroubleshootingAssistantResults.RunModal();
     end;
 
     procedure GetSessionStartTime(): DateTime

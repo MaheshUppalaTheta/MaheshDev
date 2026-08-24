@@ -1,6 +1,6 @@
 table 72930453 "Live Stats_TSA_TSL"
 {
-    Caption = 'Troubleshooting Assistance Live Stats';
+    Caption = 'Troubleshooting Assistant Live Stats';
     TableType = Temporary;
     DataClassification = SystemMetadata;
 

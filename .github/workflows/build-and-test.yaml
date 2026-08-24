@@ -1,6 +1,6 @@
 # name: Build and Test
 
-# # Builds the TroubleShooting Assistance app and runs its automated tests (codeunit 72930461 "Recording Tests_TSA_TSL")
+# # Builds the TroubleShooting Assistant app and runs its automated tests (codeunit 72930461 "Recording Tests_TSA_TSL")
 # # in a Business Central v28 container on every push / pull request.
 # #
 # # Engine: BcContainerHelper (the same tooling AL-Go for GitHub uses under the hood). BC images
@@ -21,7 +21,7 @@
 #       checks: write
 #     env:
 #       CONTAINER: bcci
-#       APP_ID: fcd31dc9-7240-48cd-a991-ed43a5b7997f   # TroubleShooting Assistance (contains the [Test] codeunit)
+#       APP_ID: fcd31dc9-7240-48cd-a991-ed43a5b7997f   # TroubleShooting Assistant (contains the [Test] codeunit)
 #     steps:
 #       - name: Checkout
 #         uses: actions/checkout@v4

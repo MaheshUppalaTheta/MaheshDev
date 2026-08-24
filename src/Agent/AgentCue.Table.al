@@ -1,6 +1,6 @@
 table 72930458 "Agent Cue_TSA_TSL"
 {
-    Caption = 'Troubleshooting Assistance Agent Cue';
+    Caption = 'Troubleshooting Assistant Agent Cue';
     DataClassification = SystemMetadata;
     Extensible = false; // Required: this table backs a ConfigurationDialog page.
 
