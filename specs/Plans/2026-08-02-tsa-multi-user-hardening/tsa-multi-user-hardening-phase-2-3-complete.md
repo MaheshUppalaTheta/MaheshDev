@@ -5,16 +5,16 @@ Two parallel phases completed. All 20 acceptance criteria pass. Three minor revi
 ## AL Objects Created/Modified
 
 **Spec A:**
-- `Trouble Shooting Assitance Transactions` Page 50007 — fixed nested FindSet cursor; `InnerBuffer` var for inner loop; time range stored per row in `Rec.Value`; `TransactionTime` page-global removed
-- `Trouble Shooting Assitance Context Manager` Codeunit 50003 — `GetClientType()` replaced with `exit(Format(CurrentClientType()))`
-- `Trouble Shooting Assitance Event Handlers` Codeunit 50001 — `IsReadable: Boolean` removed; `xRecRef.Open()` moved before `ShouldCaptureModification`; no-read-permission path: `CaptureModify` then exit
-- `Trouble Shooting Assitance Session Manager` Codeunit 50000 — `SetAutoCalcFields("Old Data","New Data","Call Stack")` before `SetRange` in `GetChanges`; per-row `CalcFields` removed
-- `Trouble Shooting Assitance Setup` Table 50001 — `GetSetup()` returns Init'd default without `Insert()`
+- `TroubleShooting Assitance Transactions` Page 50007 — fixed nested FindSet cursor; `InnerBuffer` var for inner loop; time range stored per row in `Rec.Value`; `TransactionTime` page-global removed
+- `TroubleShooting Assitance Context Manager` Codeunit 50003 — `GetClientType()` replaced with `exit(Format(CurrentClientType()))`
+- `TroubleShooting Assitance Event Handlers` Codeunit 50001 — `IsReadable: Boolean` removed; `xRecRef.Open()` moved before `ShouldCaptureModification`; no-read-permission path: `CaptureModify` then exit
+- `TroubleShooting Assitance Session Manager` Codeunit 50000 — `SetAutoCalcFields("Old Data","New Data","Call Stack")` before `SetRange` in `GetChanges`; per-row `CalcFields` removed
+- `TroubleShooting Assitance Setup` Table 50001 — `GetSetup()` returns Init'd default without `Insert()`
 - `DD Recording State` Table 50007 — `GetState()` returns Init'd default without `Insert()`
 - `DD Agent Install` Codeunit 50009 — `OnInstallAppPerCompany` seeds both singletons; `LearnMoreUrlTxt` fixed to 2+ URL path levels
 
 **Spec B:**
-- `Trouble Shooting Assitance Change Buffer` Table 50000 — `DataClassification` overrides on fields 7 (CustomerContent), 8 (CustomerContent), 9 (CustomerContent), 11 (EndUserPseudonymousIdentifiers), 12 (EndUserIdentifiableInformation), 16 (CustomerContent)
+- `TroubleShooting Assitance Change Buffer` Table 50000 — `DataClassification` overrides on fields 7 (CustomerContent), 8 (CustomerContent), 9 (CustomerContent), 11 (EndUserPseudonymousIdentifiers), 12 (EndUserIdentifiableInformation), 16 (CustomerContent)
 - `DD Recording State` Table 50007 — `DataClassification` overrides on fields 4 (EndUserPseudonymousIdentifiers), 5 (EndUserPseudonymousIdentifiers), 6 (EndUserIdentifiableInformation)
 - `app.json` — brief, description, privacyStatement, EULA, help, url all populated; `allowDebugging: false`; `allowDownloadingSource: false`
 

@@ -110,7 +110,7 @@ Call stacks are listed from innermost (top) to outermost (bottom). Example:
 "Sales Line"(Table 37).UpdateVATOnLines line 193 - Base Application by Microsoft
 "Release Sales Document"(CodeUnit 414).CalcAndUpdateVATOnLines line 9 - Base Application by Microsoft
 "Sales-Post"(CodeUnit 80).CheckAndUpdate line 48 - Base Application by Microsoft
-"Demo Bad Extension"(CodeUnit 72930464).OnBeforePostSalesDoc line 12 - Trouble Shooting Assistance by Theta Systems Limited
+"Demo Bad Extension"(CodeUnit 72930464).OnBeforePostSalesDoc line 12 - TroubleShooting Assistance by Theta Systems Limited
 ```
 
 Reading this:

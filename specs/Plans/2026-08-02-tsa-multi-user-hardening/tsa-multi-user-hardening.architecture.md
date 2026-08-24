@@ -1,4 +1,4 @@
-# Architecture Document: Trouble Shooting Assitance Multi-User Hardening
+# Architecture Document: TroubleShooting Assitance Multi-User Hardening
 
 Date: 2026-08-02
 Complexity: HIGH
@@ -8,7 +8,7 @@ Status: Approved
 > Skills applied: None (general architecture patterns only)
 
 ## 1. Executive Summary
-This architecture hardens the Trouble Shooting Assitance extension for true multi-user recording (User A starts recording, User B's operations are captured), while prioritizing AppSource readiness and operational safety. The focus is on correctness, privacy classification, permissions, release hygiene, and resilient cross-session behavior.
+This architecture hardens the TroubleShooting Assitance extension for true multi-user recording (User A starts recording, User B's operations are captured), while prioritizing AppSource readiness and operational safety. The focus is on correctness, privacy classification, permissions, release hygiene, and resilient cross-session behavior.
 
 ## 2. Business Objectives
 - Preserve core product behavior: true multi-user recording remains supported and reliable.

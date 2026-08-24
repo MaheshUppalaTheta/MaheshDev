@@ -58,7 +58,7 @@
       "source": "bcquality",
       "domain": "privacy",
       "severity": "major",
-      "message": "Table 50000 'Trouble Shooting Assitance Change Buffer' is declared DataClassification = SystemMetadata at table level. This classification cascades to every field that does not override it. The table stores: 'Old Data' and 'New Data' BLOBs containing serialised customer record content (CustomerContent); 'Call Stack' BLOB which may contain customer identifiers embedded in error messages (CustomerContent); 'User ID' Code[50] (EndUserPseudonymousIdentifiers); 'User Name' Text[80] (EndUserIdentifiableInformation); 'Company Name' Text[30] (OrganizationIdentifiableInformation). All these fields carry the wrong classification, which violates BC privacy rules and misrepresents the data to the platform's privacy tools.",
+      "message": "Table 50000 'TroubleShooting Assitance Change Buffer' is declared DataClassification = SystemMetadata at table level. This classification cascades to every field that does not override it. The table stores: 'Old Data' and 'New Data' BLOBs containing serialised customer record content (CustomerContent); 'Call Stack' BLOB which may contain customer identifiers embedded in error messages (CustomerContent); 'User ID' Code[50] (EndUserPseudonymousIdentifiers); 'User Name' Text[80] (EndUserIdentifiableInformation); 'Company Name' Text[30] (OrganizationIdentifiableInformation). All these fields carry the wrong classification, which violates BC privacy rules and misrepresents the data to the platform's privacy tools.",
       "location": { "file": "src/Tables/DataDebuggerChangeBuffer.Table.al", "line": 4, "range": "1-6" },
       "references": [
         { "path": "microsoft/knowledge/privacy/data-classification-required-on-pii-fields.md", "sha": null }
@@ -137,7 +137,7 @@
       "references": [],
       "confidence": "high",
       "from-sub-skill": "agent",
-      "fix-hint": "Declare a second local record variable (e.g. InnerBuffer: Record \"Trouble Shooting Assitance Change Buffer\") for the inner grouping loop, or restructure the procedure to perform two separate passes: one to collect all unique transaction IDs into a List, and a second pass per ID.",
+      "fix-hint": "Declare a second local record variable (e.g. InnerBuffer: Record \"TroubleShooting Assitance Change Buffer\") for the inner grouping loop, or restructure the procedure to perform two separate passes: one to collect all unique transaction IDs into a List, and a second pass per ID.",
       "suggested-code-omission-reason": "The fix requires a structural refactor of the nested loop; a one-line replacement is not sufficient."
     },
     {
@@ -217,7 +217,7 @@
       "source": "bcquality",
       "domain": "security",
       "severity": "minor",
-      "message": "GeneratedPermission.permissionset.al grants full tabledata RIMD on every app table, including Delete on 'Trouble Shooting Assitance Change Buffer', allowing any assigned user to wipe all recordings. The set also grants Execute on every codeunit, page, and internal agent codeunit. The name 'GeneratedPermission' is opaque and the Caption property is absent.",
+      "message": "GeneratedPermission.permissionset.al grants full tabledata RIMD on every app table, including Delete on 'TroubleShooting Assitance Change Buffer', allowing any assigned user to wipe all recordings. The set also grants Execute on every codeunit, page, and internal agent codeunit. The name 'GeneratedPermission' is opaque and the Caption property is absent.",
       "location": { "file": "GeneratedPermission.permissionset.al", "line": 1, "range": "1-52" },
       "references": [
         { "path": "microsoft/knowledge/security/permission-set-avoid-wildcard-grants.md", "sha": null }

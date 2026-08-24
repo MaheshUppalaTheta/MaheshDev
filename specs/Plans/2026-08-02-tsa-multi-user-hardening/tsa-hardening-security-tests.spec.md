@@ -1,4 +1,4 @@
-# Spec C: Trouble Shooting Assitance Hardening Security and Tests
+# Spec C: TroubleShooting Assitance Hardening Security and Tests
 
 Date: 2026-08-02
 Status: Approved

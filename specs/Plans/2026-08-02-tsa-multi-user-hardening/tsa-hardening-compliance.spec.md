@@ -1,4 +1,4 @@
-# Spec B: Trouble Shooting Assitance Hardening Compliance
+# Spec B: TroubleShooting Assitance Hardening Compliance
 
 Date: 2026-08-02
 Status: Approved
